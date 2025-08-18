@@ -30,7 +30,6 @@ func (s *service) ParseUserLogin(html string) (*LoginInfo, error) {
 
 	nameElement := doc.Find("#topnav span")
 	if nameElement.Length() == 0 {
-		// Check for error message
 		if doc.Find("html body div:nth-child(2) div:nth-child(4) div span").Length() > 0 {
 			return nil, fmt.Errorf("login rejected due to bad credentials")
 		}
@@ -61,31 +60,24 @@ func (s *service) ParseUserEvents(html string) (*EventsResponse, error) {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
 
-	if isSessionExpired(doc) {
-		return nil, fmt.Errorf("session expired or invalid credentials")
-	}
-
 	response := &EventsResponse{
 		Registered:   []*user.AvailableUserEvent{},
 		Unregistered: []*user.AvailableUserEvent{},
 		Upcoming:     []*user.UpcomingUserEvent{},
 	}
 
-	// Parse registered events
 	doc.Find("html body div:nth-child(2) div:nth-child(4) div div:first-child div").Children().Each(func(i int, s *goquery.Selection) {
 		if event := parseAvailableEvent(s, true); event != nil {
 			response.Registered = append(response.Registered, event)
 		}
 	})
 
-	// Parse unregistered events
 	doc.Find("html body div:nth-child(2) div:nth-child(4) div div:nth-child(2) div").Children().Each(func(i int, s *goquery.Selection) {
 		if event := parseAvailableEvent(s, false); event != nil {
 			response.Unregistered = append(response.Unregistered, event)
 		}
 	})
 
-	// Parse upcoming events
 	doc.Find("html body div:nth-child(2) div:nth-child(4) div div:nth-child(3) div").Children().Each(func(i int, s *goquery.Selection) {
 		if event := parseUpcomingEvent(s); event != nil {
 			response.Upcoming = append(response.Upcoming, event)

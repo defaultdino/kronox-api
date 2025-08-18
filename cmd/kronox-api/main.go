@@ -8,6 +8,7 @@ import (
 	"github.com/tumble-for-kronox/kronox-api/internal/handlers"
 	"github.com/tumble-for-kronox/kronox-api/internal/middleware"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
+	"github.com/tumble-for-kronox/kronox-api/internal/routes"
 	"github.com/tumble-for-kronox/kronox-api/internal/services"
 )
 
@@ -18,21 +19,11 @@ func main() {
 	}
 	defer app.Close()
 
-	parserService := parsers.NewParserService()
-	authService := services.NewAuthService(app, parserService)
-	sessionService := services.NewSessionService(app)
-	scheduleService := services.NewScheduleService(app)
-	bookingService := services.NewBookingService(app, sessionService, parserService)
+	services := initializeServices(app)
+	
+	handlers := initializeHandlers(services)
 
-	authHandler := handlers.NewAuthHandler(authService)
-	scheduleHandler := handlers.NewScheduleHandler(scheduleService, parserService)
-	bookingHandler := handlers.NewBookingHandler(bookingService)
-
-	r := gin.New()
-	r.Use(gin.Recovery())
-	r.Use(middleware.InjectDependencies(app))
-
-	setupRoutes(r, authHandler, scheduleHandler, bookingHandler)
+	r := setupRouter(app, handlers)
 
 	log.Printf("Server starting on port %s", app.Config.Port)
 	if err := r.Run(":" + app.Config.Port); err != nil {
@@ -40,61 +31,51 @@ func main() {
 	}
 }
 
-func setupRoutes(r *gin.Engine, authHandler *handlers.AuthHandler, scheduleHandler *handlers.ScheduleHandler, bookingHandler *handlers.BookingHandler) {
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "healthy"})
-	})
+type Services struct {
+	Parser    parsers.ParserService
+	Auth      *services.AuthService
+	Session   *services.SessionService
+	Schedule  *services.ScheduleService
+	Booking   *services.ResourceService
+}
 
-	r.GET("/routes", func(c *gin.Context) {
-		routes := []map[string]string{
-			{"method": "GET", "path": "/health", "description": "Health check"},
-			{"method": "GET", "path": "/routes", "description": "List all available routes"},
-			{"method": "POST", "path": "/api/v1/auth/login", "description": "Login to get session ID"},
-			{"method": "GET", "path": "/api/v1/auth/validate", "description": "Validate session"},
-			{"method": "GET", "path": "/api/v1/schedules/", "description": "Get schedule events"},
-			{"method": "GET", "path": "/api/v1/schedules/programmes", "description": "Search programmes"},
-			{"method": "GET", "path": "/api/v1/bookings/", "description": "Get user bookings (requires session)"},
-			{"method": "POST", "path": "/api/v1/bookings/", "description": "Book a resource (requires session)"},
-			{"method": "GET", "path": "/api/v1/bookings/availability", "description": "Get resource availability (requires session)"},
-		}
-		c.JSON(200, gin.H{"routes": routes})
-	})
+type Handlers struct {
+	Auth     *handlers.AuthHandler
+	Schedule *handlers.ScheduleHandler
+	Booking  *handlers.ResourceHandler
+}
 
-	r.GET("/schools", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"allowed_schools": middleware.GetAllowedSchools(),
-			"format":          "school=<school_code>",
-			"examples": []string{
-				"school=hkr",
-				"school=mau",
-				"school=oru",
-			},
-		})
-	})
-
-	api := r.Group("/api/v1")
-	{
-		auth := api.Group("/auth")
-		auth.Use(middleware.SchoolValidationMiddleware())
-		{
-			auth.POST("/login", authHandler.Login)
-			auth.GET("/validate", authHandler.ValidateSession)
-		}
-
-		schedules := api.Group("/schedules")
-		schedules.Use(middleware.SchoolValidationMiddleware())
-		{
-			schedules.GET("/", scheduleHandler.GetSchedule)
-			schedules.GET("/programmes", scheduleHandler.SearchProgrammes)
-		}
-
-		bookings := api.Group("/bookings")
-		bookings.Use(middleware.SessionMiddleware())
-		bookings.Use(middleware.SchoolValidationMiddleware())
-		{
-			bookings.GET("/", bookingHandler.GetUserBookings)
-			bookings.POST("/", bookingHandler.BookResource)
-			bookings.GET("/availability", bookingHandler.GetResourceAvailability)
-		}
+func initializeServices(app *app.App) *Services {
+	parserService := parsers.NewParserService()
+	
+	return &Services{
+		Parser:   parserService,
+		Auth:     services.NewAuthService(app, parserService),
+		Session:  services.NewSessionService(app),
+		Schedule: services.NewScheduleService(app),
+		Booking:  services.NewResourceService(app, services.NewSessionService(app), parserService),
 	}
+}
+
+func initializeHandlers(services *Services) *Handlers {
+	return &Handlers{
+		Auth:     handlers.NewAuthHandler(services.Auth),
+		Schedule: handlers.NewScheduleHandler(services.Schedule, services.Parser),
+		Booking:  handlers.NewResourceHandler(services.Booking),
+	}
+}
+
+func setupRouter(app *app.App, handlers *Handlers) *gin.Engine {
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(middleware.InjectDependencies(app))
+
+	routes.SetupUtilityRoutes(r)
+	
+	api := r.Group("/api/v1")
+	routes.SetupAuthRoutes(api, handlers.Auth)
+	routes.SetupScheduleRoutes(api, handlers.Schedule)
+	routes.SetupResourceRoutes(api, handlers.Booking)
+
+	return r
 }

@@ -54,11 +54,21 @@ func (c *client) SendRequestWithBody(ctx context.Context, method, endpoint strin
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("User-Agent", "KronoxAPI/1.0")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+	
 	if method == http.MethodPost && body != "" {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	} else {
-		req.Header.Set("Accept", "application/xml, text/html")
+		req.Header.Set("Content-Length", fmt.Sprintf("%d", len(reqBody)))
+	}
+	
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
+	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("Pragma", "no-cache")
+	
+	if method == http.MethodPost {
+		req.Header.Set("Referer", fullURL)
 	}
 
 	if sessionID := getSessionFromContext(ctx); sessionID != "" {
@@ -66,6 +76,16 @@ func (c *client) SendRequestWithBody(ctx context.Context, method, endpoint strin
 			Name:  "JSESSIONID",
 			Value: sessionID,
 		})
+	}
+
+	if method == http.MethodPost && strings.Contains(fullURL, "login_do.jsp") {
+		originalCheckRedirect := c.httpClient.CheckRedirect
+		c.httpClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		}
+		defer func() {
+			c.httpClient.CheckRedirect = originalCheckRedirect
+		}()
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -83,4 +103,16 @@ func getSessionFromContext(ctx context.Context) string {
 		}
 	}
 	return ""
+}
+
+func (c *client) ResetCookieJar() error {
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return err
+	}
+	
+	c.cookieJar = jar
+	c.httpClient.Jar = jar
+	
+	return nil
 }

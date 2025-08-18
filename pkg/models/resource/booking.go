@@ -5,7 +5,6 @@ import (
 )
 
 type Booking struct {
-	ID                 string     `json:"id"`
 	ResourceID         string     `json:"resource_id"`
 	TimeSlot           *TimeSlot  `json:"time_slot"`
 	LocationID         string     `json:"location_id"`
@@ -16,7 +15,10 @@ type Booking struct {
 }
 
 type BookingRequest struct {
-	ResourceId string           `json:"resource_id"`
-	Date       time.Time        `json:"date"`
-	Slot       AvailabilitySlot `json:"slot"`
+	Date time.Time         `json:"date"`
+	Slot *AvailabilitySlot `json:"slot"`
+}
+
+type ConfirmBookingRequest struct {
+	ResourceID string `json:"resourceId"`
 }

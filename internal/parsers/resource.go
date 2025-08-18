@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tumble-for-kronox/kronox-api/pkg/models/booking"
+	booking "github.com/tumble-for-kronox/kronox-api/pkg/models/resource"
 
 	"github.com/PuerkitoBio/goquery"
 )
@@ -15,10 +15,6 @@ func (s *service) ParseResources(html string) ([]*booking.Resource, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
-	}
-
-	if isSessionExpired(doc) {
-		return nil, fmt.Errorf("session expired or invalid credentials")
 	}
 
 	var resources []*booking.Resource
@@ -56,10 +52,6 @@ func (s *service) ParsePersonalBookings(html string, resourceID string) ([]*book
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
 
-	if isSessionExpired(doc) {
-		return nil, fmt.Errorf("session expired or invalid credentials")
-	}
-
 	var bookings []*booking.Booking
 
 	doc.Find("#minabokningar div[id]").Each(func(i int, s *goquery.Selection) {
@@ -79,30 +71,83 @@ func parseBookingNode(s *goquery.Selection, resourceID string) (*booking.Booking
 	}
 	bookingID := strings.TrimPrefix(strings.TrimSpace(id), "post_")
 
+	fmt.Printf("Parsing booking with ID: %s\n", bookingID)
+
 	var showConfirmButton, showUnbookButton bool
-	s.Find("div:first-child div:first-child a").Each(func(i int, link *goquery.Selection) {
+
+	s.Find("a").Each(func(i int, link *goquery.Selection) {
+		onclick, exists := link.Attr("onclick")
 		text := strings.TrimSpace(link.Text())
-		switch text {
-		case "Confirm":
+
+		if exists && strings.Contains(onclick, "avboka(") {
+			showUnbookButton = true
+		}
+		if exists && strings.Contains(onclick, "konfirmera(") {
 			showConfirmButton = true
-		case "Cancel booking":
+		}
+		if text == "Confirm" || text == "Bekräfta" {
+			showConfirmButton = true
+		}
+		if text == "Cancel booking" || text == "Avboka" {
 			showUnbookButton = true
 		}
 	})
 
-	dateText := strings.TrimSpace(s.Find("div:first-child a").Text())
+	firstDiv := s.Find("div").Eq(0)
 
-	// Fix: Use FilterFunction instead of Filter
-	timeText := strings.TrimSpace(s.Find("div:first-child").Contents().FilterFunction(func(i int, sel *goquery.Selection) bool {
-		return goquery.NodeName(sel) == "#text"
-	}).Text())
+	dateAnchor := firstDiv.Find("a").FilterFunction(func(i int, s *goquery.Selection) bool {
+		onclick, _ := s.Attr("onclick")
+		return strings.Contains(onclick, "satt_datum")
+	}).First()
 
-	// Extract location ID
-	locationText := strings.TrimSpace(s.Find("div:first-child b").Text())
+	dateText := strings.TrimSpace(dateAnchor.Text())
+
+	fmt.Printf("Booking has DATE: %s\n", dateText)
+
+	var textParts []string
+	firstDiv.Contents().Each(func(i int, node *goquery.Selection) {
+		if goquery.NodeName(node) == "#text" {
+			text := strings.TrimSpace(node.Text())
+			if text != "" {
+				textParts = append(textParts, text)
+			}
+		}
+	})
+
+	var timeText string
+	timeRegex := regexp.MustCompile(`(\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2})`)
+	for _, part := range textParts {
+		if matches := timeRegex.FindStringSubmatch(part); len(matches) > 1 {
+			timeText = strings.TrimSpace(matches[1])
+			break
+		}
+	}
+
+	if timeText == "" {
+		fullText := strings.TrimSpace(firstDiv.Text())
+		fullText = strings.ReplaceAll(fullText, "Cancel booking", "")
+		fullText = strings.ReplaceAll(fullText, "Avboka", "")
+		fullText = strings.ReplaceAll(fullText, "Confirm", "")
+		fullText = strings.ReplaceAll(fullText, "Bekräfta", "")
+
+		matches := timeRegex.FindStringSubmatch(fullText)
+		if len(matches) > 1 {
+			timeText = strings.TrimSpace(matches[1])
+		}
+	}
+
+	if timeText == "" {
+		return nil, fmt.Errorf("could not extract time from booking node")
+	}
+
+	locationText := strings.TrimSpace(firstDiv.Find("b").Text())
+	locationText = strings.TrimSpace(strings.TrimPrefix(locationText, "&nbsp;"))
 	locationParts := strings.Split(locationText, ",")
 	var locationID string
-	if len(locationParts) > 0 {
-		locationID = strings.TrimSpace(locationParts[len(locationParts)-1])
+	if len(locationParts) >= 2 {
+		locationID = strings.TrimSpace(locationParts[1])
+	} else if len(locationParts) == 1 {
+		locationID = strings.TrimSpace(locationParts[0])
 	}
 
 	timeParts := strings.Split(timeText, " - ")
@@ -110,26 +155,32 @@ func parseBookingNode(s *goquery.Selection, resourceID string) (*booking.Booking
 		return nil, fmt.Errorf("invalid time format: %s", timeText)
 	}
 
+	timeParts[0] = strings.TrimSpace(timeParts[0])
+	timeParts[1] = strings.TrimSpace(timeParts[1])
+
 	from, err := time.Parse("06-01-02 15:04", dateText+" "+timeParts[0])
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse start time: %w", err)
+		return nil, fmt.Errorf("failed to parse start time '%s %s': %w", dateText, timeParts[0], err)
 	}
 
 	to, err := time.Parse("06-01-02 15:04", dateText+" "+timeParts[1])
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse end time: %w", err)
+		return nil, fmt.Errorf("failed to parse end time '%s %s': %w", dateText, timeParts[1], err)
 	}
 
 	var confirmationOpen, confirmationClosed *time.Time
-	confirmationText := strings.TrimSpace(s.Find("div:nth-child(2) span").Text())
+	secondDiv := s.Find("div").Eq(1)
+	confirmationText := strings.TrimSpace(secondDiv.Find("span.error").Text())
 	if confirmationText != "" {
+		confirmationText = strings.Replace(confirmationText, "Måste bekräftas mellan ", "", 1)
 		confirmationText = strings.Replace(confirmationText, "Must be confirmed between ", "", 1)
+
 		confirmParts := strings.Split(confirmationText, " - ")
 		if len(confirmParts) == 2 {
-			if confirmFrom, err := time.Parse("06-01-02 15:04", dateText+" "+confirmParts[0]); err == nil {
+			if confirmFrom, err := time.Parse("06-01-02 15:04", dateText+" "+strings.TrimSpace(confirmParts[0])); err == nil {
 				confirmationOpen = &confirmFrom
 			}
-			if confirmTo, err := time.Parse("06-01-02 15:04", dateText+" "+confirmParts[1]); err == nil {
+			if confirmTo, err := time.Parse("06-01-02 15:04", dateText+" "+strings.TrimSpace(confirmParts[1])); err == nil {
 				confirmationClosed = &confirmTo
 			}
 		}
@@ -141,7 +192,6 @@ func parseBookingNode(s *goquery.Selection, resourceID string) (*booking.Booking
 	}
 
 	return &booking.Booking{
-		ID:                 bookingID,
 		ResourceID:         resourceID,
 		TimeSlot:           timeSlot,
 		LocationID:         locationID,
@@ -156,10 +206,6 @@ func (s *service) ParseResourceAvailability(html string, resourceDate time.Time)
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
-	}
-
-	if isSessionExpired(doc) {
-		return nil, fmt.Errorf("session expired or invalid credentials")
 	}
 
 	var slots []*booking.AvailabilitySlot

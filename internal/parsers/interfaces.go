@@ -4,19 +4,22 @@ import (
 	"time"
 
 	"github.com/tumble-for-kronox/kronox-api/pkg/models"
-	"github.com/tumble-for-kronox/kronox-api/pkg/models/booking"
+	booking "github.com/tumble-for-kronox/kronox-api/pkg/models/resource"
 )
 
 type ParserService interface {
-	// Booking parsers
+	// Resource parsers
 	ParseResources(html string) ([]*booking.Resource, error)
 	ParsePersonalBookings(html string, resourceID string) ([]*booking.Booking, error)
 	ParseResourceAvailability(html string, resourceDate time.Time) ([]*booking.AvailabilitySlot, error) // Fixed method name
+
+	// Event parsers
+	ParseUserEvents(html string) (*EventsResponse, error)
 
 	// Schedule parsers
 	ParseScheduleXML(xmlContent string) ([]*models.Event, error)
 	ParseProgrammes(html string) ([]*models.Programme, error)
 
+	// Login parsers
 	ParseUserLogin(html string) (*LoginInfo, error)
-	ParseUserEvents(html string) (*EventsResponse, error)
 }

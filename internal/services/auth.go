@@ -29,8 +29,12 @@ type UserInfo struct {
 	Username string `json:"username"`
 }
 
-func (s *AuthService) Login(ctx context.Context, username, password, school string) (string, *UserInfo, error) {
-	endpoint := fmt.Sprintf("%s/login_do.jsp", strings.TrimSuffix(school, "/"))
+func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl string) (string, *UserInfo, error) {
+	if err := s.app.KronoxClient.ResetCookieJar(); err != nil {
+		fmt.Printf("Warning: Failed to reset cookie jar: %v\n", err)
+	}
+
+	endpoint := fmt.Sprintf("%s/login_do.jsp", strings.TrimSuffix(schoolUrl, "/"))
 
 	postData := fmt.Sprintf("username=%s&password=%s",
 		url.QueryEscape(username),
@@ -42,14 +46,6 @@ func (s *AuthService) Login(ctx context.Context, username, password, school stri
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", nil, fmt.Errorf("failed to read response: %w", err)
-	}
-	responseHTML := string(body)
-
-	// we can't access the cookie jar directly through the interface
-	// so we need to check if cookies were sent back via response headers
 	var sessionID string
 	for _, cookie := range resp.Cookies() {
 		if cookie.Name == "JSESSIONID" {
@@ -59,7 +55,52 @@ func (s *AuthService) Login(ctx context.Context, username, password, school stri
 	}
 
 	if sessionID == "" {
+		body, _ := io.ReadAll(resp.Body)
+		fmt.Printf("Login failed - no session cookie. Response body: %s\n", string(body))
 		return "", nil, fmt.Errorf("no session cookie found - login likely failed")
+	}
+
+	if resp.StatusCode == http.StatusFound {
+		location := resp.Header.Get("Location")
+		if location == "" {
+			return "", nil, fmt.Errorf("redirect response missing Location header")
+		}
+		
+		ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
+		
+		redirectResp, err := s.app.KronoxClient.SendRequest(ctxWithSession, http.MethodGet, location, map[string]string{})
+		if err != nil {
+			return "", nil, fmt.Errorf("failed to follow redirect: %w", err)
+		}
+		defer redirectResp.Body.Close()
+		
+		body, err := io.ReadAll(redirectResp.Body)
+		if err != nil {
+			return "", nil, fmt.Errorf("failed to read redirect response: %w", err)
+		}
+		responseHTML := string(body)
+		
+		userInfo, err := s.parserService.ParseUserLogin(responseHTML)
+		if err != nil {
+			return "", nil, fmt.Errorf("failed to parse user info: %w", err)
+		}
+		
+		return sessionID, &UserInfo{
+			Name:     userInfo.Name,
+			Username: userInfo.Username,
+		}, nil
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", nil, fmt.Errorf("failed to read response: %w", err)
+	}
+	responseHTML := string(body)
+	
+	if strings.Contains(strings.ToLower(responseHTML), "error") ||
+	   strings.Contains(strings.ToLower(responseHTML), "invalid") ||
+	   strings.Contains(strings.ToLower(responseHTML), "fel") {
+		return "", nil, fmt.Errorf("login failed - error detected in response")
 	}
 
 	userInfo, err := s.parserService.ParseUserLogin(responseHTML)
@@ -73,19 +114,31 @@ func (s *AuthService) Login(ctx context.Context, username, password, school stri
 	}, nil
 }
 
-func (s *AuthService) ValidateSession(ctx context.Context, sessionID, school string) (bool, error) {
+func (s *AuthService) ValidateSession(ctx context.Context, sessionID, schoolUrl string) (bool, error) {
 	ctx = context.WithValue(ctx, sessionIDKey, sessionID)
 
-	endpoint := fmt.Sprintf("%s/dashboard.jsp", strings.TrimSuffix(school, "/"))
+	endpoint := fmt.Sprintf("%s/start.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	response, err := s.app.KronoxClient.SendRequest(ctx, http.MethodGet, endpoint, map[string]string{})
 	if err != nil {
-		return false, nil
+		return false, fmt.Errorf("failed to validate session: %w", err)
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode == http.StatusOK {
-		body, _ := io.ReadAll(response.Body)
-		return !strings.Contains(string(body), "login"), nil
+		body, err := io.ReadAll(response.Body)
+		if err != nil {
+			return false, fmt.Errorf("failed to read validation response: %w", err)
+		}
+		
+		bodyStr := string(body)
+		
+		// when authenticated: shows "Hej [Name]" and navigation links
+		// when not authenticated: shows login form with "Användarnamn:" and "Lösenord:"
+		isAuthenticated := strings.Contains(bodyStr, "Hej ") && 
+			!strings.Contains(bodyStr, "Användarnamn:") && 
+			!strings.Contains(bodyStr, "Lösenord:")
+
+		return isAuthenticated, nil
 	}
 
 	return false, nil

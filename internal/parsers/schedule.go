@@ -123,13 +123,10 @@ func parseCourses(explanationRows []explanationRow) map[string]string {
 			continue
 		}
 
-		// Process each "rad" (row) within this explanation row
 		for _, rad := range row.Rows {
 			var courseID, courseName string
 
-			// Process each "kolumn" (column) within this rad
 			for _, kolumn := range rad.Columns {
-				// Clean the value from CDATA and trim spaces
 				cleanValue := strings.TrimSpace(kolumn.Value)
 				cleanValue = strings.Trim(cleanValue, " \t\n\r")
 
@@ -162,7 +159,6 @@ func parseTeachers(explanationRows []explanationRow) map[string]*models.Teacher 
 			var teacherID, firstName, lastName string
 
 			for _, kolumn := range rad.Columns {
-				// Clean the value from CDATA and trim spaces
 				cleanValue := strings.TrimSpace(kolumn.Value)
 				cleanValue = strings.Trim(cleanValue, " \t\n\r")
 
@@ -201,7 +197,6 @@ func parseLocations(explanationRows []explanationRow) map[string]*models.Locatio
 			var locationID, name, building, floor, maxSeats string
 
 			for _, kolumn := range rad.Columns {
-				// Clean the value from CDATA and trim spaces
 				cleanValue := strings.TrimSpace(kolumn.Value)
 				cleanValue = strings.Trim(cleanValue, " \t\n\r")
 

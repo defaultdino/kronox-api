@@ -12,23 +12,9 @@ func SessionMiddleware() gin.HandlerFunc {
 		var sessionID string
 
 		if auth := c.GetHeader("Authorization"); auth != "" {
-			if strings.HasPrefix(auth, "Bearer ") {
-				sessionID = strings.TrimPrefix(auth, "Bearer ")
+			if after, ok :=strings.CutPrefix(auth, "Bearer "); ok  {
+				sessionID = after
 			}
-		}
-
-		if sessionID == "" {
-			sessionID = c.GetHeader("X-Session-ID")
-		}
-
-		if sessionID == "" {
-			if cookie, err := c.Request.Cookie("JSESSIONID"); err == nil {
-				sessionID = cookie.Value
-			}
-		}
-
-		if sessionID == "" {
-			sessionID = c.Query("jsessionid")
 		}
 
 		if sessionID == "" {

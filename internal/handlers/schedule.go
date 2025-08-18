@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tumble-for-kronox/kronox-api/internal/middleware"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
 	"github.com/tumble-for-kronox/kronox-api/internal/services"
 )
@@ -24,15 +23,6 @@ func NewScheduleHandler(scheduleService *services.ScheduleService, parserService
 }
 
 func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
-	schemaURL := middleware.GetSchemaURL(c)
-	webbschemaURL := middleware.GetWebbschemaURL(c)
-	kronoxURL := middleware.GetKronoxURL(c)
-
-	if schemaURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "school required"})
-		return
-	}
-
 	scheduleIDsParam := c.Query("schedule_ids")
 	if scheduleIDsParam == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "schedule_ids required (comma-separated)"})
@@ -55,18 +45,13 @@ func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 		}
 	}
 
-	// automatically attempt fetching from schema -> webbschema -> kronox
+	scheduleXML, err := AttemptOverSchoolURLs(c, func(url string) (string, error) {
+		return h.scheduleService.GetSchedules(c.Request.Context(), url, scheduleIDs, language, startDate)
+	})
 
-	scheduleXML, err := h.scheduleService.GetSchedules(c.Request.Context(), schemaURL, scheduleIDs, language, startDate)
 	if err != nil {
-		scheduleXML, err = h.scheduleService.GetSchedules(c.Request.Context(), webbschemaURL, scheduleIDs, language, startDate)
-		if err != nil {
-			scheduleXML, err = h.scheduleService.GetSchedules(c.Request.Context(), kronoxURL, scheduleIDs, language, startDate)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch schedule from both schema and webbschema URLs"})
-				return
-			}
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch schedule from both schema and webbschema URLs"})
+		return
 	}
 
 	events, err := h.parserService.ParseScheduleXML(scheduleXML)
@@ -79,27 +64,18 @@ func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 }
 
 func (h *ScheduleHandler) SearchProgrammes(c *gin.Context) {
-	schemaURL := middleware.GetSchemaURL(c)
-	webbschemaURL := middleware.GetWebbschemaURL(c)
-
-	if schemaURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "school required"})
-		return
-	}
-
 	searchQuery := c.Query("q")
 	if searchQuery == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "search query 'q' required"})
 		return
 	}
 
-	programmesHTML, err := h.scheduleService.GetProgrammes(c.Request.Context(), schemaURL, searchQuery)
+	programmesHTML, err := AttemptOverSchoolURLs(c, func(url string) (string, error) {
+		return h.scheduleService.GetProgrammes(c.Request.Context(), url, searchQuery)
+	})
 	if err != nil {
-		programmesHTML, err = h.scheduleService.GetProgrammes(c.Request.Context(), webbschemaURL, searchQuery)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch programmes from both schema and webbschema URLs"})
-			return
-		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch programmes from all available URLs"})
+		return
 	}
 
 	programmes, err := h.parserService.ParseProgrammes(programmesHTML)

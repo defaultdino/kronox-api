@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +20,6 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 type LoginRequest struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
-	School   string `json:"school" binding:"required"`
 }
 
 type LoginResponse struct {
@@ -35,8 +35,16 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	sessionID, userInfo, err := h.authService.Login(c.Request.Context(), req.Username, req.Password, req.School)
-	if err != nil {
+	var sessionID string
+	var userInfo *services.UserInfo
+	var loginErr error
+
+	_, _ = AttemptOverSchoolURLs(c, func(url string) (bool, error) {
+		sessionID, userInfo, loginErr = h.authService.Login(c.Request.Context(), req.Username, req.Password, url)
+		return loginErr == nil, loginErr
+	})
+
+	if loginErr != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials or login failed"})
 		return
 	}
@@ -51,15 +59,27 @@ func (h *AuthHandler) Login(c *gin.Context) {
 }
 
 func (h *AuthHandler) ValidateSession(c *gin.Context) {
-	sessionID := c.GetHeader("X-Session-ID")
-	school := c.Query("school")
+	var sessionID string
 
-	if sessionID == "" || school == "" {
+	if auth := c.GetHeader("Authorization"); auth != "" {
+		if after, ok := strings.CutPrefix(auth, "Bearer "); ok {
+			sessionID = after
+		}
+	}
+
+	if sessionID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "session_id and school required"})
 		return
 	}
 
-	isValid, err := h.authService.ValidateSession(c.Request.Context(), sessionID, school)
+	var isValid bool
+	var err error
+
+	_, _ = AttemptOverSchoolURLs(c, func(url string) (bool, error) {
+		isValid, err = h.authService.ValidateSession(c.Request.Context(), sessionID, url)
+		return err == nil, err
+	})
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
