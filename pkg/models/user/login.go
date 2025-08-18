@@ -1,4 +1,4 @@
-package models
+package user
 
 type LoginResponse struct {
 	SessionToken string `json:"session_token"`

@@ -14,3 +14,9 @@ type Booking struct {
 	ConfirmationOpen   *time.Time `json:"confirmation_open,omitempty"`
 	ConfirmationClosed *time.Time `json:"confirmation_closed,omitempty"`
 }
+
+type BookingRequest struct {
+	ResourceId string           `json:"resource_id"`
+	Date       time.Time        `json:"date"`
+	Slot       AvailabilitySlot `json:"slot"`
+}

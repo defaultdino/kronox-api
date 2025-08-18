@@ -11,15 +11,15 @@ import (
 	"github.com/tumble-for-kronox/kronox-api/internal/app"
 )
 
-type KronoxService struct {
+type ScheduleService struct {
 	app *app.App
 }
 
-func NewKronoxService(app *app.App) *KronoxService {
-	return &KronoxService{app: app}
+func NewScheduleService(app *app.App) *ScheduleService {
+	return &ScheduleService{app: app}
 }
 
-func (s *KronoxService) GetSchedule(ctx context.Context, schoolURL string, scheduleIDs []string, language *string, startDate *time.Time) (string, error) {
+func (s *ScheduleService) GetSchedules(ctx context.Context, school string, scheduleIDs []string, language *string, startDate *time.Time) (string, error) {
 	parsedDate := "idag"
 	if startDate != nil {
 		parsedDate = startDate.Format("2006-01-02")
@@ -30,12 +30,12 @@ func (s *KronoxService) GetSchedule(ctx context.Context, schoolURL string, sched
 		parsedLang = *language
 	}
 
-	endpoint := fmt.Sprintf("%s/setup/jsp/SchemaXML.jsp", strings.TrimSuffix(schoolURL, "/"))
+	endpoint := fmt.Sprintf("%s/setup/jsp/SchemaXML.jsp", strings.TrimSuffix(school, "/"))
 
 	params := map[string]string{
 		"startDatum":     parsedDate,
 		"intervallTyp":   "m",
-		"intervallAntal": "6",
+		"intervallAntal": "6", // 6 months ahead (maximum)
 		"sprak":          parsedLang,
 		"sokMedAND":      "false",
 		"forklaringar":   "true",
@@ -56,8 +56,8 @@ func (s *KronoxService) GetSchedule(ctx context.Context, schoolURL string, sched
 	return string(body), nil
 }
 
-func (s *KronoxService) GetProgrammes(ctx context.Context, schoolURL string, searchQuery string) (string, error) {
-	endpoint := fmt.Sprintf("%s/ajax/ajax_sokResurser.jsp", strings.TrimSuffix(schoolURL, "/"))
+func (s *ScheduleService) GetProgrammes(ctx context.Context, school string, searchQuery string) (string, error) {
+	endpoint := fmt.Sprintf("%s/ajax/ajax_sokResurser.jsp", strings.TrimSuffix(school, "/"))
 
 	params := map[string]string{
 		"sokord":         searchQuery,

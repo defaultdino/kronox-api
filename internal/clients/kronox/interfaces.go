@@ -8,8 +8,8 @@ import (
 )
 
 type Client interface {
-	// endpoint should be a full URL (e.g., "https://schema.hkr.se/setup/jsp/SchemaXML.jsp")
 	SendRequest(ctx context.Context, method, endpoint string, params map[string]string) (*http.Response, error)
+	SendRequestWithBody(ctx context.Context, method, endpoint string, params map[string]string, body string) (*http.Response, error)
 }
 
 type Logger interface {
@@ -19,6 +19,6 @@ type Logger interface {
 }
 
 type ScheduleRepository interface {
-	GetSchedule(ctx context.Context, scheduleID string) (*models.Schedule, error)
-	SaveSchedule(ctx context.Context, schedule *models.Schedule) error
+	GetScheduleEvents(ctx context.Context, scheduleID string) ([]*models.Event, error)
+	SaveScheduleEvents(ctx context.Context, schedule []*models.Event) error
 }
