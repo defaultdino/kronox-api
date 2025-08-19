@@ -3,10 +3,10 @@ package handlers
 import (
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tumble-for-kronox/kronox-api/internal/services"
+	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
 )
 
 type AuthHandler struct {
@@ -17,30 +17,29 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
-type LoginRequest struct {
-	Username string `json:"username" binding:"required"`
-	Password string `json:"password" binding:"required"`
-}
-
-type LoginResponse struct {
-	SessionID string             `json:"session_id"`
-	ExpiresAt time.Time          `json:"expires_at"`
-	UserInfo  *services.UserInfo `json:"user_info"`
-}
-
+// Login godoc
+// @Summary      User login
+// @Description  Authenticate user with username and password across multiple school URLs
+// @Tags         authentication
+// @Accept       json
+// @Produce      json
+// @Param        credentials  body      user.LoginRequest  true  "Login credentials"
+// @Success      200         {object}  user.User          "User successfully authenticated"
+// @Failure      400         {object}  ErrorResponse      "Invalid request body"
+// @Failure      401         {object}  ErrorResponse      "Invalid credentials or login failed"
+// @Router       /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	var req LoginRequest
+	var req user.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var sessionID string
-	var userInfo *services.UserInfo
+	var user *user.User
 	var loginErr error
 
 	_, _ = AttemptOverSchoolURLs(c, func(url string) (bool, error) {
-		sessionID, userInfo, loginErr = h.authService.Login(c.Request.Context(), req.Username, req.Password, url)
+		user, loginErr = h.authService.Login(c.Request.Context(), req.Username, req.Password, url)
 		return loginErr == nil, loginErr
 	})
 
@@ -49,15 +48,21 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	response := LoginResponse{
-		SessionID: sessionID,
-		ExpiresAt: time.Now().Add(24 * time.Hour),
-		UserInfo:  userInfo,
-	}
-
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, user)
 }
 
+// ValidateSession godoc
+// @Summary      Validate user session
+// @Description  Check if a user session is valid across multiple school URLs
+// @Tags         authentication
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
+// @Success      200           {object}  SessionValidationResponse  "Session validation result"
+// @Failure      400           {object}  ErrorResponse              "Missing session_id in Authorization header"
+// @Failure      500           {object}  ErrorResponse              "Internal server error during validation"
+// @Security     BearerAuth
+// @Router       /auth/validate [get]
 func (h *AuthHandler) ValidateSession(c *gin.Context) {
 	var sessionID string
 
@@ -86,4 +91,10 @@ func (h *AuthHandler) ValidateSession(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"valid": isValid})
+}
+
+// SessionValidationResponse represents session validation response
+// @Description Session validation response structure
+type SessionValidationResponse struct {
+	Valid bool `json:"valid" example:"true"`
 }

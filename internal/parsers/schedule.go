@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/tumble-for-kronox/kronox-api/pkg/models"
-
-	"github.com/PuerkitoBio/goquery"
 )
 
 type KronoxScheduleXML struct {
@@ -41,47 +39,6 @@ func (s *service) ParseScheduleXML(xmlContent string) ([]*models.Event, error) {
 	}
 
 	return events, nil
-}
-
-func (s *service) ParseProgrammes(html string) ([]*models.Programme, error) {
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse HTML: %w", err)
-	}
-
-	var programmes []*models.Programme
-
-	doc.Find("a[target='_blank']").Slice(2, goquery.ToEnd).Each(func(i int, s *goquery.Selection) {
-		href, exists := s.Attr("href")
-		if !exists || href == "" {
-			return
-		}
-
-		re := regexp.MustCompile(`resurser=(.*)$`)
-		matches := re.FindStringSubmatch(href)
-		if len(matches) < 2 {
-			return
-		}
-
-		id := matches[1]
-		text := strings.TrimSpace(s.Text())
-		parts := strings.Split(text, ",")
-
-		if len(parts) < 2 {
-			return
-		}
-
-		title := strings.TrimSpace(parts[0])
-		subtitle := removeDuplicateWords(strings.TrimSpace(parts[1]))
-
-		programmes = append(programmes, &models.Programme{
-			Title:    title,
-			Subtitle: subtitle,
-			Id:       id,
-		})
-	})
-
-	return programmes, nil
 }
 
 type eventPost struct {

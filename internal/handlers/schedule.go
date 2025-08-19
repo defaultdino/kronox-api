@@ -22,6 +22,19 @@ func NewScheduleHandler(scheduleService *services.ScheduleService, parserService
 	}
 }
 
+// GetSchedule godoc
+// @Summary      Get schedule events
+// @Description  Retrieve schedule events for one or more schedule IDs with optional language and date filtering
+// @Tags         schedules
+// @Accept       json
+// @Produce      json
+// @Param        schedule_ids  query     string  true   "Comma-separated list of schedule IDs"  example("schedule1,schedule2,schedule3")
+// @Param        language      query     string  false  "Language preference for the schedule"  example("en")
+// @Param        start_date    query     string  false  "Start date for filtering events (YYYY-MM-DD format)"  example("2024-01-15") format(date)
+// @Success      200          {object}  ScheduleEventsResponse  "List of schedule events"
+// @Failure      400          {object}  ErrorResponse           "Missing required parameters or invalid date format"
+// @Failure      500          {object}  ErrorResponse           "Failed to fetch or parse schedule data"
+// @Router       /schedules [get]
 func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 	scheduleIDsParam := c.Query("schedule_ids")
 	if scheduleIDsParam == "" {
@@ -63,26 +76,8 @@ func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"events": events})
 }
 
-func (h *ScheduleHandler) SearchProgrammes(c *gin.Context) {
-	searchQuery := c.Query("q")
-	if searchQuery == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "search query 'q' required"})
-		return
-	}
-
-	programmesHTML, err := AttemptOverSchoolURLs(c, func(url string) (string, error) {
-		return h.scheduleService.GetProgrammes(c.Request.Context(), url, searchQuery)
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch programmes from all available URLs"})
-		return
-	}
-
-	programmes, err := h.parserService.ParseProgrammes(programmesHTML)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse programmes HTML"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"programmes": programmes})
+// ScheduleEventsResponse represents the response for schedule events
+// @Description Response containing list of schedule events parsed from XML
+type ScheduleEventsResponse struct {
+	Events interface{} `json:"events" example:"[{\"id\":\"evt_123\",\"title\":\"Math Lecture\",\"startTime\":\"2024-01-15T09:00:00Z\",\"endTime\":\"2024-01-15T10:30:00Z\",\"location\":\"Room A101\",\"instructor\":\"Dr. Smith\"}]"`
 }

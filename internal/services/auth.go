@@ -11,6 +11,7 @@ import (
 
 	"github.com/tumble-for-kronox/kronox-api/internal/app"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
+	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
 )
 
 type AuthService struct {
@@ -25,12 +26,7 @@ func NewAuthService(app *app.App, parserService parsers.ParserService) *AuthServ
 	}
 }
 
-type UserInfo struct {
-	Name     string `json:"name"`
-	Username string `json:"username"`
-}
-
-func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl string) (string, *UserInfo, error) {
+func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl string) (*user.User, error) {
 	if err := s.app.KronoxClient.ResetCookieJar(); err != nil {
 		log.Printf("Warning: Failed to reset cookie jar: %v\n", err)
 	}
@@ -43,7 +39,7 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 
 	resp, err := s.app.KronoxClient.SendRequestWithBody(ctx, http.MethodPost, endpoint, map[string]string{}, postData)
 	if err != nil {
-		return "", nil, fmt.Errorf("login request failed: %w", err)
+		return nil, fmt.Errorf("login request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -58,60 +54,62 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 	if sessionID == "" {
 		body, _ := io.ReadAll(resp.Body)
 		log.Printf("Login failed - no session cookie. Response body: %s\n", string(body))
-		return "", nil, fmt.Errorf("no session cookie found - login likely failed")
+		return nil, fmt.Errorf("no session cookie found - login likely failed")
 	}
 
 	if resp.StatusCode == http.StatusFound {
 		location := resp.Header.Get("Location")
 		if location == "" {
-			return "", nil, fmt.Errorf("redirect response missing Location header")
+			return nil, fmt.Errorf("redirect response missing Location header")
 		}
 
 		ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
 
 		redirectResp, err := s.app.KronoxClient.SendRequest(ctxWithSession, http.MethodGet, location, map[string]string{})
 		if err != nil {
-			return "", nil, fmt.Errorf("failed to follow redirect: %w", err)
+			return nil, fmt.Errorf("failed to follow redirect: %w", err)
 		}
 		defer redirectResp.Body.Close()
 
 		body, err := io.ReadAll(redirectResp.Body)
 		if err != nil {
-			return "", nil, fmt.Errorf("failed to read redirect response: %w", err)
+			return nil, fmt.Errorf("failed to read redirect response: %w", err)
 		}
 		responseHTML := string(body)
 
 		userInfo, err := s.parserService.ParseUserLogin(responseHTML)
 		if err != nil {
-			return "", nil, fmt.Errorf("failed to parse user info: %w", err)
+			return nil, fmt.Errorf("failed to parse user info: %w", err)
 		}
 
-		return sessionID, &UserInfo{
-			Name:     userInfo.Name,
-			Username: userInfo.Username,
+		return &user.User{
+			Name:      userInfo.Name,
+			Username:  userInfo.Username,
+			SessionID: sessionID,
 		}, nil
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to read response: %w", err)
+		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 	responseHTML := string(body)
 
 	if strings.Contains(strings.ToLower(responseHTML), "error") ||
 		strings.Contains(strings.ToLower(responseHTML), "invalid") ||
 		strings.Contains(strings.ToLower(responseHTML), "fel") {
-		return "", nil, fmt.Errorf("login failed - error detected in response")
+		return nil, fmt.Errorf("login failed - error detected in response")
 	}
 
 	userInfo, err := s.parserService.ParseUserLogin(responseHTML)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to parse user info: %w", err)
+		return nil, fmt.Errorf("failed to parse user info: %w", err)
 	}
 
-	return sessionID, &UserInfo{
-		Name:     userInfo.Name,
-		Username: userInfo.Username,
+	return &user.User{
+		Name:      userInfo.Name,
+		Username:  userInfo.Username,
+		SessionID: sessionID,
 	}, nil
 }
 

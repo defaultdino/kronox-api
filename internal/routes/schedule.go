@@ -11,6 +11,5 @@ func SetupScheduleRoutes(api *gin.RouterGroup, scheduleHandler *handlers.Schedul
 	schedules.Use(middleware.SchoolValidationMiddleware())
 	{
 		schedules.GET("", scheduleHandler.GetSchedule)
-		schedules.GET("/programmes", scheduleHandler.SearchProgrammes)
 	}
 }

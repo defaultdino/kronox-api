@@ -18,6 +18,8 @@ type ParserService interface {
 
 	// Schedule parsers
 	ParseScheduleXML(xmlContent string) ([]*models.Event, error)
+
+	// Programme parsers
 	ParseProgrammes(html string) ([]*models.Programme, error)
 
 	// Login parsers

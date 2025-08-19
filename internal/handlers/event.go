@@ -19,6 +19,18 @@ func NewEventHandler(eventService *services.EventService, parserService parsers.
 	}
 }
 
+// GetUserEvents godoc
+// @Summary      Get user events
+// @Description  Retrieve all events for the authenticated user across multiple school URLs
+// @Tags         events
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
+// @Success      200           {object}  EventsListResponse  "List of user events"
+// @Failure      401           {object}  ErrorResponse       "Session required"
+// @Failure      500           {object}  ErrorResponse       "Internal server error"
+// @Security     BearerAuth
+// @Router       /events [get]
 func (h *EventHandler) GetUserEvents(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	if !exists {
@@ -38,6 +50,20 @@ func (h *EventHandler) GetUserEvents(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"events": events})
 }
 
+// RegisterUserEvent godoc
+// @Summary      Register for event
+// @Description  Register the authenticated user for a specific event
+// @Tags         events
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
+// @Param        eventId        path      string  true  "Event ID to register for"
+// @Success      200           {object}  SuccessResponse  "Successfully registered for event"
+// @Failure      400           {object}  ErrorResponse    "eventId path parameter required"
+// @Failure      401           {object}  ErrorResponse    "Session required"
+// @Failure      500           {object}  ErrorResponse    "Internal server error"
+// @Security     BearerAuth
+// @Router       /events/{eventId}/register [post]
 func (h *EventHandler) RegisterUserEvent(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	if !exists {
@@ -61,6 +87,20 @@ func (h *EventHandler) RegisterUserEvent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "successfully registered for event"})
 }
 
+// UnregisterUserEvent godoc
+// @Summary      Unregister from event
+// @Description  Unregister the authenticated user from a specific event
+// @Tags         events
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
+// @Param        eventId        path      string  true  "Event ID to unregister from"
+// @Success      200           {object}  SuccessResponse  "Successfully unregistered from event"
+// @Failure      400           {object}  ErrorResponse    "eventId path parameter required"
+// @Failure      401           {object}  ErrorResponse    "Session required"
+// @Failure      500           {object}  ErrorResponse    "Internal server error"
+// @Security     BearerAuth
+// @Router       /events/{eventId}/unregister [delete]
 func (h *EventHandler) UnregisterUserEvent(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	if !exists {
@@ -84,6 +124,21 @@ func (h *EventHandler) UnregisterUserEvent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "successfully unregistered from event"})
 }
 
+// AddEventSupport godoc
+// @Summary      Add event support
+// @Description  Add support for a specific participator in an event
+// @Tags         events
+// @Accept       json
+// @Produce      json
+// @Param        Authorization    header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
+// @Param        participatorId   path      string  true  "Participator ID to support"
+// @Param        supportId        path      string  true  "Support ID to add"
+// @Success      200             {object}  SuccessResponse  "Successfully added event support"
+// @Failure      400             {object}  ErrorResponse    "participatorId or supportId path parameter required"
+// @Failure      401             {object}  ErrorResponse    "Session required"
+// @Failure      500             {object}  ErrorResponse    "Internal server error"
+// @Security     BearerAuth
+// @Router       /events/support/{participatorId}/{supportId} [post]
 func (h *EventHandler) AddEventSupport(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	if !exists {
@@ -113,6 +168,22 @@ func (h *EventHandler) AddEventSupport(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "successfully added event support"})
 }
 
+// RemoveEventSupport godoc
+// @Summary      Remove event support
+// @Description  Remove support for a specific participator in an event
+// @Tags         events
+// @Accept       json
+// @Produce      json
+// @Param        Authorization    header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
+// @Param        eventId          path      string  true  "Event ID"
+// @Param        participatorId   path      string  true  "Participator ID"
+// @Param        supportId        path      string  true  "Support ID to remove"
+// @Success      200             {object}  SuccessResponse  "Successfully removed event support"
+// @Failure      400             {object}  ErrorResponse    "eventId, participatorId, or supportId path parameter required"
+// @Failure      401             {object}  ErrorResponse    "Session required"
+// @Failure      500             {object}  ErrorResponse    "Internal server error"
+// @Security     BearerAuth
+// @Router       /events/{eventId}/support/{participatorId}/{supportId} [delete]
 func (h *EventHandler) RemoveEventSupport(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	if !exists {
@@ -146,4 +217,22 @@ func (h *EventHandler) RemoveEventSupport(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "successfully removed event support"})
+}
+
+// EventsListResponse represents the response for getting user events
+// @Description Response containing list of user events
+type EventsListResponse struct {
+	Events *parsers.EventsResponse `json:"events"`
+}
+
+// SuccessResponse represents a successful operation response
+// @Description Standard success response
+type SuccessResponse struct {
+	Message string `json:"message" example:"Operation completed successfully"`
+}
+
+// ErrorResponse represents an error response
+// @Description Error response structure
+type ErrorResponse struct {
+	Error string `json:"error" example:"Invalid request"`
 }
