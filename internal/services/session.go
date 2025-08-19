@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -21,34 +22,34 @@ func NewSessionService(app *app.App) *SessionService {
 func (s *SessionService) ValidateSession(ctx context.Context, school, sessionID string) bool {
 	isValid, _ := s.RefreshSession(ctx, school, sessionID)
 	if isValid {
-		fmt.Printf("Session validation via poll: VALID\n")
+		log.Printf("Session validation via poll: VALID\n")
 		return true
 	}
-	
+
 	ctx = context.WithValue(ctx, sessionIDKey, sessionID)
 	endpoint := fmt.Sprintf("%s/start.jsp", strings.TrimSuffix(school, "/"))
-	
+
 	response, err := s.app.KronoxClient.SendRequest(ctx, http.MethodGet, endpoint, map[string]string{})
 	if err != nil {
 		return false
 	}
 	defer response.Body.Close()
-	
+
 	if response.StatusCode != http.StatusOK {
 		return false
 	}
-	
+
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return false
 	}
-	
+
 	bodyStr := string(body)
-	
-	isAuthenticated := strings.Contains(bodyStr, "Hej ") && 
-		!strings.Contains(bodyStr, "Användarnamn:") && 
+
+	isAuthenticated := strings.Contains(bodyStr, "Hej ") &&
+		!strings.Contains(bodyStr, "Användarnamn:") &&
 		!strings.Contains(bodyStr, "Lösenord:")
-	
+
 	return isAuthenticated
 }
 
@@ -65,7 +66,7 @@ func (s *SessionService) SetSessionLanguage(ctx context.Context, schoolUrl, sess
 		return fmt.Errorf("failed to set session language: %w", err)
 	}
 	defer response.Body.Close()
-	
+
 	return nil
 }
 
@@ -90,6 +91,6 @@ func (s *SessionService) RefreshSession(ctx context.Context, schoolUrl, sessionI
 
 	content := strings.TrimSpace(string(body))
 	isOK := strings.EqualFold(content, "OK")
-	
+
 	return isOK, nil
 }

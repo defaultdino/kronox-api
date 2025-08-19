@@ -12,7 +12,7 @@ func SessionMiddleware() gin.HandlerFunc {
 		var sessionID string
 
 		if auth := c.GetHeader("Authorization"); auth != "" {
-			if after, ok :=strings.CutPrefix(auth, "Bearer "); ok  {
+			if after, ok := strings.CutPrefix(auth, "Bearer "); ok {
 				sessionID = after
 			}
 		}

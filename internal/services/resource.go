@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -69,13 +70,13 @@ func (s *ResourceService) GetBookedResources(ctx context.Context, schoolUrl stri
 	for _, resource := range resources {
 		bookingsHTML, err := s.getActiveResourceBookings(ctx, schoolUrl, sessionID, resource.ID)
 		if err != nil {
-			fmt.Printf("Failed to get bookings HTML for resource %s: %v\n", resource.ID, err)
+			log.Printf("Failed to get bookings HTML for resource %s: %v\n", resource.ID, err)
 			continue
 		}
 
 		bookings, err := s.parserService.ParsePersonalBookings(bookingsHTML, resource.ID)
 		if err != nil {
-			fmt.Printf("Failed to parse bookings for resource %s: %v\n", resource.ID, err)
+			log.Printf("Failed to parse bookings for resource %s: %v\n", resource.ID, err)
 			continue
 		}
 		allBookings = append(allBookings, bookings...)

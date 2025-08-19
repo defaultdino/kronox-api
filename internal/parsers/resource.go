@@ -2,6 +2,7 @@ package parsers
 
 import (
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -71,7 +72,7 @@ func parseBookingNode(s *goquery.Selection, resourceID string) (*booking.Booking
 	}
 	bookingID := strings.TrimPrefix(strings.TrimSpace(id), "post_")
 
-	fmt.Printf("Parsing booking with ID: %s\n", bookingID)
+	log.Printf("Parsing booking with ID: %s\n", bookingID)
 
 	var showConfirmButton, showUnbookButton bool
 
@@ -102,7 +103,7 @@ func parseBookingNode(s *goquery.Selection, resourceID string) (*booking.Booking
 
 	dateText := strings.TrimSpace(dateAnchor.Text())
 
-	fmt.Printf("Booking has DATE: %s\n", dateText)
+	log.Printf("Booking has DATE: %s\n", dateText)
 
 	var textParts []string
 	firstDiv.Contents().Each(func(i int, node *goquery.Selection) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -31,7 +32,7 @@ type UserInfo struct {
 
 func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl string) (string, *UserInfo, error) {
 	if err := s.app.KronoxClient.ResetCookieJar(); err != nil {
-		fmt.Printf("Warning: Failed to reset cookie jar: %v\n", err)
+		log.Printf("Warning: Failed to reset cookie jar: %v\n", err)
 	}
 
 	endpoint := fmt.Sprintf("%s/login_do.jsp", strings.TrimSuffix(schoolUrl, "/"))
@@ -56,7 +57,7 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 
 	if sessionID == "" {
 		body, _ := io.ReadAll(resp.Body)
-		fmt.Printf("Login failed - no session cookie. Response body: %s\n", string(body))
+		log.Printf("Login failed - no session cookie. Response body: %s\n", string(body))
 		return "", nil, fmt.Errorf("no session cookie found - login likely failed")
 	}
 
@@ -65,26 +66,26 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 		if location == "" {
 			return "", nil, fmt.Errorf("redirect response missing Location header")
 		}
-		
+
 		ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
-		
+
 		redirectResp, err := s.app.KronoxClient.SendRequest(ctxWithSession, http.MethodGet, location, map[string]string{})
 		if err != nil {
 			return "", nil, fmt.Errorf("failed to follow redirect: %w", err)
 		}
 		defer redirectResp.Body.Close()
-		
+
 		body, err := io.ReadAll(redirectResp.Body)
 		if err != nil {
 			return "", nil, fmt.Errorf("failed to read redirect response: %w", err)
 		}
 		responseHTML := string(body)
-		
+
 		userInfo, err := s.parserService.ParseUserLogin(responseHTML)
 		if err != nil {
 			return "", nil, fmt.Errorf("failed to parse user info: %w", err)
 		}
-		
+
 		return sessionID, &UserInfo{
 			Name:     userInfo.Name,
 			Username: userInfo.Username,
@@ -96,10 +97,10 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 		return "", nil, fmt.Errorf("failed to read response: %w", err)
 	}
 	responseHTML := string(body)
-	
+
 	if strings.Contains(strings.ToLower(responseHTML), "error") ||
-	   strings.Contains(strings.ToLower(responseHTML), "invalid") ||
-	   strings.Contains(strings.ToLower(responseHTML), "fel") {
+		strings.Contains(strings.ToLower(responseHTML), "invalid") ||
+		strings.Contains(strings.ToLower(responseHTML), "fel") {
 		return "", nil, fmt.Errorf("login failed - error detected in response")
 	}
 
@@ -129,13 +130,13 @@ func (s *AuthService) ValidateSession(ctx context.Context, sessionID, schoolUrl 
 		if err != nil {
 			return false, fmt.Errorf("failed to read validation response: %w", err)
 		}
-		
+
 		bodyStr := string(body)
-		
+
 		// when authenticated: shows "Hej [Name]" and navigation links
 		// when not authenticated: shows login form with "Användarnamn:" and "Lösenord:"
-		isAuthenticated := strings.Contains(bodyStr, "Hej ") && 
-			!strings.Contains(bodyStr, "Användarnamn:") && 
+		isAuthenticated := strings.Contains(bodyStr, "Hej ") &&
+			!strings.Contains(bodyStr, "Användarnamn:") &&
 			!strings.Contains(bodyStr, "Lösenord:")
 
 		return isAuthenticated, nil

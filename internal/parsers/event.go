@@ -6,52 +6,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
-
 	"github.com/PuerkitoBio/goquery"
+	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
 )
-
-type LoginInfo struct {
-	Name     string
-	Username string
-}
 
 type EventsResponse struct {
 	Registered   []*user.AvailableUserEvent
 	Unregistered []*user.AvailableUserEvent
 	Upcoming     []*user.UpcomingUserEvent
-}
-
-func (s *service) ParseUserLogin(html string) (*LoginInfo, error) {
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse HTML: %w", err)
-	}
-
-	nameElement := doc.Find("#topnav span")
-	if nameElement.Length() == 0 {
-		if doc.Find("html body div:nth-child(2) div:nth-child(4) div span").Length() > 0 {
-			return nil, fmt.Errorf("login rejected due to bad credentials")
-		}
-		return nil, fmt.Errorf("failed to parse login page")
-	}
-
-	nameHTML, _ := nameElement.Html()
-	re := regexp.MustCompile(`Inloggad som: (?P<name>\D*)\d* \[(?P<username>.*)\]`)
-	matches := re.FindStringSubmatch(nameHTML)
-
-	name := "N/A"
-	username := "N/A"
-
-	if len(matches) >= 3 {
-		name = strings.TrimSpace(matches[1])
-		username = strings.TrimSpace(matches[2])
-	}
-
-	return &LoginInfo{
-		Name:     name,
-		Username: username,
-	}, nil
 }
 
 func (s *service) ParseUserEvents(html string) (*EventsResponse, error) {
@@ -142,12 +104,11 @@ func parseAvailableEvent(s *goquery.Selection, isRegistered bool) *user.Availabl
 	var dataNodes []*goquery.Selection
 	s.Find("div").EachWithBreak(func(i int, div *goquery.Selection) bool {
 		if strings.Contains(strings.ToLower(div.Text()), "test date") {
-			// Collect this and the next few divs
 			allDivs := s.Find("div")
 			for j := 0; j < 6 && i+j < allDivs.Length(); j++ {
 				dataNodes = append(dataNodes, allDivs.Eq(i+j))
 			}
-			return false // Break
+			return false
 		}
 		return true
 	})
