@@ -55,8 +55,18 @@ func (h *ProgrammeHandler) SearchProgrammes(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"programmes": programmes})
 }
 
+// Programme represents a single programme
+// @Description Academic programme information
+type Programme struct {
+	ID          string `json:"id" example:"prog_123"`
+	Name        string `json:"name" example:"Computer Science"`
+	Code        string `json:"code" example:"CS101"`
+	Credits     int    `json:"credits" example:"180"`
+	Description string `json:"description,omitempty" example:"Bachelor's degree in Computer Science"`
+}
+
 // ProgrammesResponse represents the response for programme search
 // @Description Response containing list of programmes matching the search criteria
 type ProgrammesResponse struct {
-	Programmes interface{} `json:"programmes" example:"[{\"id\":\"prog_123\",\"name\":\"Computer Science\",\"code\":\"CS101\",\"credits\":180}]"`
+	Programmes []Programme `json:"programmes"`
 }

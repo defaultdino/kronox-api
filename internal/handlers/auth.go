@@ -35,15 +35,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	var user *user.User
-	var loginErr error
-
-	_, _ = AttemptOverSchoolURLs(c, func(url string) (bool, error) {
-		user, loginErr = h.authService.Login(c.Request.Context(), req.Username, req.Password, url)
-		return loginErr == nil, loginErr
+	user, err := AttemptOverSchoolURLs(c, func(url string) (*user.User, error) {
+		return h.authService.Login(c.Request.Context(), req.Username, req.Password, url)
 	})
 
-	if loginErr != nil {
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials or login failed"})
 		return
 	}

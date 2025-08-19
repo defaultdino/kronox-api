@@ -76,8 +76,20 @@ func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"events": events})
 }
 
+// ScheduleEvent represents a single schedule event
+// @Description Schedule event information
+type ScheduleEvent struct {
+	ID         string `json:"id" example:"evt_123"`
+	Title      string `json:"title" example:"Math Lecture"`
+	StartTime  string `json:"startTime" example:"2024-01-15T09:00:00Z"`
+	EndTime    string `json:"endTime" example:"2024-01-15T10:30:00Z"`
+	Location   string `json:"location" example:"Room A101"`
+	Instructor string `json:"instructor,omitempty" example:"Dr. Smith"`
+	CourseCode string `json:"courseCode,omitempty" example:"MATH101"`
+}
+
 // ScheduleEventsResponse represents the response for schedule events
 // @Description Response containing list of schedule events parsed from XML
 type ScheduleEventsResponse struct {
-	Events interface{} `json:"events" example:"[{\"id\":\"evt_123\",\"title\":\"Math Lecture\",\"startTime\":\"2024-01-15T09:00:00Z\",\"endTime\":\"2024-01-15T10:30:00Z\",\"location\":\"Room A101\",\"instructor\":\"Dr. Smith\"}]"`
+	Events []ScheduleEvent `json:"events"`
 }

@@ -4,6 +4,9 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "github.com/tumble-for-kronox/kronox-api/docs"
 	"github.com/tumble-for-kronox/kronox-api/internal/app"
 	"github.com/tumble-for-kronox/kronox-api/internal/handlers"
 	"github.com/tumble-for-kronox/kronox-api/internal/middleware"
@@ -12,9 +15,9 @@ import (
 	"github.com/tumble-for-kronox/kronox-api/internal/services"
 )
 
-// @title           kronox-api
+// @title           Kronox API
 // @version         1.0
-// @description     A RESTful Web API for managing Kronox web resources
+// @description     A RESTful Web API for managing Kronox web resources, schedules, events, and bookings
 // @termsOfService  http://swagger.io/terms/
 
 // @contact.name   API Support
@@ -27,7 +30,10 @@ import (
 // @host      localhost:5055
 // @BasePath  /api/v1
 
-// @securityDefinitions.basic  BasicAuth
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and session token.
 
 func main() {
 	app, err := app.NewApp()
@@ -95,6 +101,8 @@ func setupRouter(app *app.App, handlers *Handlers) *gin.Engine {
 	r.Use(gin.Recovery())
 	r.Use(middleware.InjectDependencies(app))
 
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
 	routes.SetupUtilityRoutes(r)
 
 	api := r.Group("/api/v1")
@@ -102,6 +110,7 @@ func setupRouter(app *app.App, handlers *Handlers) *gin.Engine {
 	routes.SetupScheduleRoutes(api, handlers.Schedule)
 	routes.SetupResourceRoutes(api, handlers.Resource)
 	routes.SetupEventRoutes(api, handlers.Event)
+	routes.SetupProgrammeRoutes(api, handlers.Programme)
 
 	return r
 }
