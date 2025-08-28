@@ -40,15 +40,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize app: %v", err)
 	}
-	defer app.Close()
-
 	services := initializeServices(app)
 
 	handlers := initializeHandlers(services)
 
 	r := setupRouter(app, handlers)
 
-	if err := r.Run(":" + app.Config.Port); err != nil {
+	if err := r.Run(":" + "5055"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
