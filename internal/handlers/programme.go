@@ -27,10 +27,11 @@ func NewProgrammeHandler(programmeService *services.ProgrammeService, parserServ
 // @Accept       json
 // @Produce      json
 // @Param        q    query     string  true  "Search query for programmes"  example("Computer Science")
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200  {object}  ProgrammesResponse  "List of programmes matching the search query"
 // @Failure      400  {object}  ErrorResponse       "Search query 'q' required"
 // @Failure      500  {object}  ErrorResponse       "Failed to fetch or parse programmes"
-// @Router       /programmes/search [get]
+// @Router       /programmes [get]
 func (h *ProgrammeHandler) SearchProgrammes(c *gin.Context) {
 	searchQuery := c.Query("q")
 	if searchQuery == "" {

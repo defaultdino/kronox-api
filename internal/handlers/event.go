@@ -26,6 +26,7 @@ func NewEventHandler(eventService *services.EventService, parserService parsers.
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  EventsListResponse  "List of user events"
 // @Failure      401           {object}  ErrorResponse       "Session required"
 // @Failure      500           {object}  ErrorResponse       "Internal server error"
@@ -58,6 +59,7 @@ func (h *EventHandler) GetUserEvents(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        eventId        path      string  true  "Event ID to register for"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  SuccessResponse  "Successfully registered for event"
 // @Failure      400           {object}  ErrorResponse    "eventId path parameter required"
 // @Failure      401           {object}  ErrorResponse    "Session required"
@@ -95,6 +97,7 @@ func (h *EventHandler) RegisterUserEvent(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        eventId        path      string  true  "Event ID to unregister from"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  SuccessResponse  "Successfully unregistered from event"
 // @Failure      400           {object}  ErrorResponse    "eventId path parameter required"
 // @Failure      401           {object}  ErrorResponse    "Session required"
@@ -133,6 +136,7 @@ func (h *EventHandler) UnregisterUserEvent(c *gin.Context) {
 // @Param        Authorization    header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        participatorId   path      string  true  "Participator ID to support"
 // @Param        supportId        path      string  true  "Support ID to add"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200             {object}  SuccessResponse  "Successfully added event support"
 // @Failure      400             {object}  ErrorResponse    "participatorId or supportId path parameter required"
 // @Failure      401             {object}  ErrorResponse    "Session required"
@@ -178,6 +182,7 @@ func (h *EventHandler) AddEventSupport(c *gin.Context) {
 // @Param        eventId          path      string  true  "Event ID"
 // @Param        participatorId   path      string  true  "Participator ID"
 // @Param        supportId        path      string  true  "Support ID to remove"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200             {object}  SuccessResponse  "Successfully removed event support"
 // @Failure      400             {object}  ErrorResponse    "eventId, participatorId, or supportId path parameter required"
 // @Failure      401             {object}  ErrorResponse    "Session required"

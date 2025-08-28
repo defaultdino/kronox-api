@@ -298,6 +298,12 @@ paths:
       description: Authenticate user with username and password across multiple school
         URLs
       parameters:
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
+        type: string
       - description: Login credentials
         in: body
         name: credentials
@@ -328,6 +334,12 @@ paths:
       - application/json
       description: Check if a user session is valid across multiple school URLs
       parameters:
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
+        type: string
       - description: Bearer token (session ID)
         format: Bearer {session_id}
         in: header
@@ -369,6 +381,12 @@ paths:
       - description: Booking ID to cancel
         in: path
         name: bookingId
+        required: true
+        type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
         required: true
         type: string
       produces:
@@ -419,6 +437,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/handlers.ConfirmBookingBodyRequest'
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -466,6 +490,12 @@ paths:
         name: resourceId
         required: true
         type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -503,6 +533,12 @@ paths:
         name: Authorization
         required: true
         type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -538,6 +574,12 @@ paths:
       - description: Event ID to register for
         in: path
         name: eventId
+        required: true
+        type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
         required: true
         type: string
       produces:
@@ -591,6 +633,12 @@ paths:
         name: supportId
         required: true
         type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -630,6 +678,12 @@ paths:
       - description: Event ID to unregister from
         in: path
         name: eventId
+        required: true
+        type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
         required: true
         type: string
       produces:
@@ -678,6 +732,12 @@ paths:
         name: supportId
         required: true
         type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -702,7 +762,7 @@ paths:
       summary: Add event support
       tags:
       - events
-  /programmes/search:
+  /programmes:
     get:
       consumes:
       - application/json
@@ -713,6 +773,12 @@ paths:
         example: '"Computer Science"'
         in: query
         name: q
+        required: true
+        type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
         required: true
         type: string
       produces:
@@ -744,6 +810,12 @@ paths:
         format: Bearer {session_id}
         in: header
         name: Authorization
+        required: true
+        type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
         required: true
         type: string
       produces:
@@ -788,6 +860,12 @@ paths:
         format: date
         in: query
         name: date
+        required: true
+        type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
         required: true
         type: string
       produces:
@@ -837,6 +915,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/booking.BookingRequest'
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -876,6 +960,12 @@ paths:
       - description: Resource ID to get bookings for
         in: path
         name: resourceId
+        required: true
+        type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
         required: true
         type: string
       produces:
@@ -925,6 +1015,12 @@ paths:
         name: date
         required: true
         type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -959,6 +1055,12 @@ paths:
         format: Bearer {session_id}
         in: header
         name: Authorization
+        required: true
+        type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
         required: true
         type: string
       produces:
@@ -996,6 +1098,12 @@ paths:
       - description: Booking ID to cancel
         in: path
         name: bookingId
+        required: true
+        type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
         required: true
         type: string
       produces:
@@ -1046,6 +1154,12 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/booking.ConfirmBookingRequest'
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -1093,6 +1207,12 @@ paths:
         format: date
         in: query
         name: start_date
+        type: string
+      - description: School that request pertains to
+        example: '"hkr"'
+        in: query
+        name: school
+        required: true
         type: string
       produces:
       - application/json

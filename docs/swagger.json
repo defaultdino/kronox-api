@@ -33,6 +33,14 @@
                 "summary": "User login",
                 "parameters": [
                     {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
                         "description": "Login credentials",
                         "name": "credentials",
                         "in": "body",
@@ -83,6 +91,14 @@
                 ],
                 "summary": "Validate user session",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "format": "Bearer {session_id}",
@@ -146,6 +162,14 @@
                         "description": "Booking ID to cancel",
                         "name": "bookingId",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -219,6 +243,14 @@
                         "schema": {
                             "$ref": "#/definitions/handlers.ConfirmBookingBodyRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -289,6 +321,14 @@
                         "name": "resourceId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -344,6 +384,14 @@
                         "description": "Bearer token (session ID)",
                         "name": "Authorization",
                         "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -409,6 +457,14 @@
                         "name": "supportId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -471,6 +527,14 @@
                         "description": "Event ID to register for",
                         "name": "eventId",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -549,6 +613,14 @@
                         "name": "supportId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -612,6 +684,14 @@
                         "name": "eventId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -642,7 +722,7 @@
                 }
             }
         },
-        "/programmes/search": {
+        "/programmes": {
             "get": {
                 "description": "Search for academic programmes across multiple school URLs using a search query",
                 "consumes": [
@@ -661,6 +741,14 @@
                         "example": "\"Computer Science\"",
                         "description": "Search query for programmes",
                         "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
                         "in": "query",
                         "required": true
                     }
@@ -712,6 +800,14 @@
                         "description": "Bearer token (session ID)",
                         "name": "Authorization",
                         "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -778,6 +874,14 @@
                         "name": "date",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -833,6 +937,14 @@
                         "description": "Bearer token (session ID)",
                         "name": "Authorization",
                         "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -890,6 +1002,14 @@
                         "description": "Booking ID to cancel",
                         "name": "bookingId",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -963,6 +1083,14 @@
                         "schema": {
                             "$ref": "#/definitions/booking.ConfirmBookingRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1032,6 +1160,14 @@
                         "format": "date",
                         "description": "Date in YYYY-MM-DD format",
                         "name": "date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
                         "in": "query",
                         "required": true
                     }
@@ -1106,6 +1242,14 @@
                         "schema": {
                             "$ref": "#/definitions/booking.BookingRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1168,6 +1312,14 @@
                         "description": "Resource ID to get bookings for",
                         "name": "resourceId",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -1235,6 +1387,14 @@
                         "description": "Start date for filtering events (YYYY-MM-DD format)",
                         "name": "start_date",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {

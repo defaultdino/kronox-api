@@ -39,6 +39,14 @@ const docTemplate = `{
                 "summary": "User login",
                 "parameters": [
                     {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
                         "description": "Login credentials",
                         "name": "credentials",
                         "in": "body",
@@ -89,6 +97,14 @@ const docTemplate = `{
                 ],
                 "summary": "Validate user session",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
+                    },
                     {
                         "type": "string",
                         "format": "Bearer {session_id}",
@@ -152,6 +168,14 @@ const docTemplate = `{
                         "description": "Booking ID to cancel",
                         "name": "bookingId",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -225,6 +249,14 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/handlers.ConfirmBookingBodyRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -295,6 +327,14 @@ const docTemplate = `{
                         "name": "resourceId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -350,6 +390,14 @@ const docTemplate = `{
                         "description": "Bearer token (session ID)",
                         "name": "Authorization",
                         "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -415,6 +463,14 @@ const docTemplate = `{
                         "name": "supportId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -477,6 +533,14 @@ const docTemplate = `{
                         "description": "Event ID to register for",
                         "name": "eventId",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -555,6 +619,14 @@ const docTemplate = `{
                         "name": "supportId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -618,6 +690,14 @@ const docTemplate = `{
                         "name": "eventId",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -648,7 +728,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/programmes/search": {
+        "/programmes": {
             "get": {
                 "description": "Search for academic programmes across multiple school URLs using a search query",
                 "consumes": [
@@ -667,6 +747,14 @@ const docTemplate = `{
                         "example": "\"Computer Science\"",
                         "description": "Search query for programmes",
                         "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
                         "in": "query",
                         "required": true
                     }
@@ -718,6 +806,14 @@ const docTemplate = `{
                         "description": "Bearer token (session ID)",
                         "name": "Authorization",
                         "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -784,6 +880,14 @@ const docTemplate = `{
                         "name": "date",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -839,6 +943,14 @@ const docTemplate = `{
                         "description": "Bearer token (session ID)",
                         "name": "Authorization",
                         "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -896,6 +1008,14 @@ const docTemplate = `{
                         "description": "Booking ID to cancel",
                         "name": "bookingId",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -969,6 +1089,14 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/booking.ConfirmBookingRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1038,6 +1166,14 @@ const docTemplate = `{
                         "format": "date",
                         "description": "Date in YYYY-MM-DD format",
                         "name": "date",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
                         "in": "query",
                         "required": true
                     }
@@ -1112,6 +1248,14 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/booking.BookingRequest"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -1174,6 +1318,14 @@ const docTemplate = `{
                         "description": "Resource ID to get bookings for",
                         "name": "resourceId",
                         "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
                         "required": true
                     }
                 ],
@@ -1241,6 +1393,14 @@ const docTemplate = `{
                         "description": "Start date for filtering events (YYYY-MM-DD format)",
                         "name": "start_date",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "example": "\"hkr\"",
+                        "description": "School that request pertains to",
+                        "name": "school",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {

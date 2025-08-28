@@ -31,6 +31,7 @@ func NewScheduleHandler(scheduleService *services.ScheduleService, parserService
 // @Param        schedule_ids  query     string  true   "Comma-separated list of schedule IDs"  example("schedule1,schedule2,schedule3")
 // @Param        language      query     string  false  "Language preference for the schedule"  example("en")
 // @Param        start_date    query     string  false  "Start date for filtering events (YYYY-MM-DD format)"  example("2024-01-15") format(date)
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200          {object}  ScheduleEventsResponse  "List of schedule events"
 // @Failure      400          {object}  ErrorResponse           "Missing required parameters or invalid date format"
 // @Failure      500          {object}  ErrorResponse           "Failed to fetch or parse schedule data"

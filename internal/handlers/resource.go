@@ -27,6 +27,7 @@ func NewResourceHandler(resourceService *services.ResourceService) *ResourceHand
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  ResourcesListResponse  "List of available resources"
 // @Failure      401           {object}  ErrorResponse          "Session required"
 // @Failure      500           {object}  ErrorResponse          "Internal server error"
@@ -59,6 +60,7 @@ func (h *ResourceHandler) GetAllResources(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  BookingsListResponse  "List of user bookings"
 // @Failure      401           {object}  ErrorResponse         "Session required"
 // @Failure      500           {object}  ErrorResponse         "Internal server error"
@@ -92,6 +94,7 @@ func (h *ResourceHandler) GetBookings(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        resourceId     path      string  true  "Resource ID to get bookings for"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  BookingsListResponse  "List of active bookings for the resource"
 // @Failure      400           {object}  ErrorResponse         "resourceId path parameter required"
 // @Failure      401           {object}  ErrorResponse         "Session required"
@@ -132,6 +135,7 @@ func (h *ResourceHandler) GetActiveBookingsForResource(c *gin.Context) {
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        resource_id    query     string  true  "Resource ID to check availability for"
 // @Param        date          query     string  true  "Date in YYYY-MM-DD format"  Format(date)
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  AvailabilityResponse  "Available time slots for the resource"
 // @Failure      400           {object}  ErrorResponse         "resource_id and date are required"
 // @Failure      401           {object}  ErrorResponse         "Session required"
@@ -183,6 +187,7 @@ func (h *ResourceHandler) GetResourceAvailability(c *gin.Context) {
 // @Param        Authorization  header                    string                   true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        resourceId     path                      string                   true  "Resource ID to book"
 // @Param        booking        body                      booking.BookingRequest   true  "Booking details"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}                  SuccessResponse          "Booking successful"
 // @Failure      400           {object}                  ErrorResponse            "Invalid request data"
 // @Failure      401           {object}                  ErrorResponse            "Session required"
@@ -247,6 +252,7 @@ func (h *ResourceHandler) BookResource(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        bookingId      path      string  true  "Booking ID to cancel"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  SuccessResponse  "Booking cancelled successfully"
 // @Failure      400           {object}  ErrorResponse    "bookingId is required"
 // @Failure      401           {object}  ErrorResponse    "Session required"
@@ -285,6 +291,7 @@ func (h *ResourceHandler) UnbookResource(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        bookingId      path      string  true  "Booking ID to cancel"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  SuccessResponse  "Booking cancelled successfully"
 // @Failure      400           {object}  ErrorResponse    "bookingId path parameter required"
 // @Failure      401           {object}  ErrorResponse    "Session required"
@@ -324,6 +331,7 @@ func (h *ResourceHandler) UnbookResourceByID(c *gin.Context) {
 // @Param        Authorization  header                         string                          true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        bookingId      path                           string                          true  "Booking ID to confirm"
 // @Param        confirmation   body                           booking.ConfirmBookingRequest   true  "Confirmation details"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}                       SuccessResponse                 "Booking confirmed successfully"
 // @Failure      400           {object}                       ErrorResponse                   "Invalid request data"
 // @Failure      401           {object}                       ErrorResponse                   "Session required"
@@ -374,6 +382,7 @@ func (h *ResourceHandler) ConfirmResourceBooking(c *gin.Context) {
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        bookingId      path      string  true  "Booking ID to confirm"
 // @Param        resourceId     path      string  true  "Resource ID for confirmation"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  SuccessResponse  "Booking confirmed successfully"
 // @Failure      400           {object}  ErrorResponse    "bookingId or resourceId path parameter required"
 // @Failure      401           {object}  ErrorResponse    "Session required"
@@ -418,6 +427,7 @@ func (h *ResourceHandler) ConfirmResourceBookingByID(c *gin.Context) {
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        resourceId     path      string  true  "Resource ID to check availability for"
 // @Param        date          query     string  true  "Date in YYYY-MM-DD format"  Format(date)
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  AvailabilityResponse  "Available time slots for the resource"
 // @Failure      400           {object}  ErrorResponse         "resourceId and date are required"
 // @Failure      401           {object}  ErrorResponse         "Session required"
@@ -470,6 +480,7 @@ func (h *ResourceHandler) GetAvailableResources(c *gin.Context) {
 // @Param        Authorization  header                string                     true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        bookingId      path                  string                     true  "Booking ID to confirm"
 // @Param        resource       body                  ConfirmBookingBodyRequest  true  "Resource ID for confirmation"
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}              SuccessResponse            "Booking confirmed successfully"
 // @Failure      400           {object}              ErrorResponse              "bookingId path parameter or resourceId in body required"
 // @Failure      401           {object}              ErrorResponse              "Session required"

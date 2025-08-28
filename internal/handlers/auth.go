@@ -23,6 +23,7 @@ func NewAuthHandler(authService *services.AuthService) *AuthHandler {
 // @Tags         authentication
 // @Accept       json
 // @Produce      json
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Param        credentials  body      user.LoginRequest  true  "Login credentials"
 // @Success      200         {object}  user.User          "User successfully authenticated"
 // @Failure      400         {object}  ErrorResponse      "Invalid request body"
@@ -53,6 +54,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Tags         authentication
 // @Accept       json
 // @Produce      json
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Success      200           {object}  SessionValidationResponse  "Session validation result"
 // @Failure      400           {object}  ErrorResponse              "Missing session_id in Authorization header"
