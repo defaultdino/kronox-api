@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tumble-for-kronox/kronox-api/internal/middleware"
+	"github.com/tumble-for-kronox/kronox-api/pkg/middleware"
 )
 
 func AttemptOverSchoolURLs[T any](c *gin.Context, callback func(url string) (T, error)) (T, error) {

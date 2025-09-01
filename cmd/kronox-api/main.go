@@ -75,8 +75,8 @@ func initializeServices(app *app.App) *Services {
 
 	return &Services{
 		Parser:    parserService,
+		Session:   sessionService,
 		Auth:      services.NewAuthService(app, parserService),
-		Session:   services.NewSessionService(app),
 		Schedule:  services.NewScheduleService(app),
 		Programme: services.NewProgrammeService(app),
 		Resource:  services.NewResourceService(app, sessionService, parserService),

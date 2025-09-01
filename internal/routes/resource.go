@@ -4,12 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tumble-for-kronox/kronox-api/internal/handlers"
 	"github.com/tumble-for-kronox/kronox-api/internal/middleware"
+	shared "github.com/tumble-for-kronox/kronox-api/pkg/middleware"
 )
 
 func SetupResourceRoutes(api *gin.RouterGroup, ResourceHandler *handlers.ResourceHandler) {
 	protected := []gin.HandlerFunc{
 		middleware.SessionMiddleware(),
-		middleware.SchoolValidationMiddleware(),
+		shared.SchoolValidationMiddleware(),
 	}
 
 	resources := api.Group("/resources")

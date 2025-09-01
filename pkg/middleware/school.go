@@ -29,7 +29,7 @@ var (
 func getSchoolConfig() Config {
 	loadOnce.Do(func() {
 		if err := LoadSchoolConfig("schools.toml"); err != nil {
-			panic(err) // or log + fail
+			panic(err)
 		}
 	})
 	return schoolConfig

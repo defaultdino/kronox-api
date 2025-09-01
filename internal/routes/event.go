@@ -4,12 +4,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tumble-for-kronox/kronox-api/internal/handlers"
 	"github.com/tumble-for-kronox/kronox-api/internal/middleware"
+	shared "github.com/tumble-for-kronox/kronox-api/pkg/middleware"
 )
 
 func SetupEventRoutes(api *gin.RouterGroup, EventHandler *handlers.EventHandler) {
 	protected := []gin.HandlerFunc{
 		middleware.SessionMiddleware(),
-		middleware.SchoolValidationMiddleware(),
+		shared.SchoolValidationMiddleware(),
 	}
 
 	events := api.Group("/events")
