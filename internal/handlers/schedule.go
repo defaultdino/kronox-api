@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"net/url"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -38,18 +36,13 @@ func NewScheduleHandler(scheduleService *services.ScheduleService, parserService
 // @Failure      500          {object}  ErrorResponse           "Failed to fetch or parse schedule data"
 // @Router       /schedules [get]
 func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
-	scheduleIDsParam := c.Query("schedule_ids")
-	if scheduleIDsParam == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "schedule_ids required (comma-separated)"})
+
+	scheduleIDs, exists := c.Get("schedule_ids")
+	if !exists {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "schedule_ids missing"})
 		return
 	}
-
-	rawScheduleIDs := strings.Split(scheduleIDsParam, ",")
-
-	scheduleIDs := make([]string, len(rawScheduleIDs))
-	for i, id := range rawScheduleIDs {
-		scheduleIDs[i] = url.QueryEscape(id)
-	}
+	ids := scheduleIDs.([]string)
 
 	var language *string
 	if lang := c.Query("language"); lang != "" {
@@ -67,7 +60,7 @@ func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 	}
 
 	scheduleXML, err := AttemptOverSchoolURLs(c, func(url string) (string, error) {
-		return h.scheduleService.GetSchedules(c.Request.Context(), url, scheduleIDs, language, startDate)
+		return h.scheduleService.GetSchedules(c.Request.Context(), url, ids, language, startDate)
 	})
 
 	if err != nil {
@@ -75,7 +68,7 @@ func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 		return
 	}
 
-	events, err := h.parserService.ParseScheduleXML(scheduleIDs, scheduleXML)
+	events, err := h.parserService.ParseScheduleXML(ids, scheduleXML)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse schedule XML"})
 		return
