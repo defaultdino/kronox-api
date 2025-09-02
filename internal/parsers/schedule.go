@@ -16,7 +16,7 @@ type KronoxScheduleXML struct {
 	ExplanationRows []explanationRow `xml:"forklaringstexter>forklaringsrader"`
 }
 
-func (s *service) ParseScheduleXML(xmlContent string) ([]*models.Event, error) {
+func (s *service) ParseScheduleXML(scheduleIDs []string, xmlContent string) ([]*models.Event, error) {
 	var scheduleXML KronoxScheduleXML
 	if err := xml.Unmarshal([]byte(xmlContent), &scheduleXML); err != nil {
 		return nil, fmt.Errorf("failed to parse XML: %w", err)
@@ -31,7 +31,7 @@ func (s *service) ParseScheduleXML(xmlContent string) ([]*models.Event, error) {
 	var events []*models.Event
 
 	for _, post := range scheduleXML.Posts {
-		event, err := parseEvent(post, teachers, locations, courses)
+		event, err := parseEvent(scheduleIDs, post, teachers, locations, courses)
 		if err != nil {
 			continue
 		}
@@ -186,7 +186,7 @@ func parseLocations(explanationRows []explanationRow) map[string]*models.Locatio
 	return locations
 }
 
-func parseEvent(post eventPost, teachers map[string]*models.Teacher, locations map[string]*models.Location, courses map[string]string) (*models.Event, error) {
+func parseEvent(scheduleIDs []string, post eventPost, teachers map[string]*models.Teacher, locations map[string]*models.Location, courses map[string]string) (*models.Event, error) {
 	timeStart, err := time.Parse("20060102T150405Z", post.BookedDates.StartDateTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse start time: %w", err)
@@ -205,7 +205,7 @@ func parseEvent(post eventPost, teachers map[string]*models.Teacher, locations m
 	var courseID, courseName string
 	var eventTeachers []*models.Teacher
 	var eventLocations []*models.Location
-	var scheduleIDs []string
+	var resourceScheduleIDs []string
 
 	for _, node := range post.ResourceRow.ResourceNodes {
 		cleanResourceID := strings.TrimSpace(node.ResourceID)
@@ -231,16 +231,36 @@ func parseEvent(post eventPost, teachers map[string]*models.Teacher, locations m
 			}
 		case "UTB_PROGRAMINSTANS_KLASSER":
 			if cleanResourceIDURLEncoded != "" {
-				scheduleIDs = append(scheduleIDs, cleanResourceIDURLEncoded)
+				resourceScheduleIDs = append(resourceScheduleIDs, cleanResourceIDURLEncoded)
 			} else {
-				scheduleIDs = append(scheduleIDs, cleanResourceID)
+				resourceScheduleIDs = append(resourceScheduleIDs, cleanResourceID)
 			}
 		}
 	}
 
 	var primaryScheduleID string
-	if len(scheduleIDs) > 0 {
-		primaryScheduleID = scheduleIDs[0]
+	if len(resourceScheduleIDs) > 0 {
+		xmlScheduleID := resourceScheduleIDs[0]
+
+		for _, requestedID := range scheduleIDs {
+			if dotIndex := strings.Index(requestedID, "."); dotIndex != -1 {
+				suffixAfterDot := requestedID[dotIndex+1:]
+
+				if suffixAfterDot == xmlScheduleID {
+					primaryScheduleID = requestedID
+					break
+				}
+			} else {
+				if requestedID == xmlScheduleID {
+					primaryScheduleID = requestedID
+					break
+				}
+			}
+		}
+
+		if primaryScheduleID == "" {
+			primaryScheduleID = xmlScheduleID
+		}
 	}
 
 	if courseID == "" {

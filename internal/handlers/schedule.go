@@ -68,7 +68,7 @@ func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 		return
 	}
 
-	events, err := h.parserService.ParseScheduleXML(scheduleXML)
+	events, err := h.parserService.ParseScheduleXML(scheduleIDs, scheduleXML)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse schedule XML"})
 		return
