@@ -213,8 +213,6 @@ func parseEvent(scheduleIDs []string, post eventPost, teachers map[string]*model
 		cleanResourceID = strings.TrimSuffix(cleanResourceID, "]]>")
 		cleanResourceID = strings.TrimSpace(cleanResourceID)
 
-		cleanResourceIDURLEncoded := strings.TrimSpace(node.ResourceIDURLEncoded)
-
 		switch node.ResourceTypeID {
 		case "UTB_KURSINSTANS_GRUPPER":
 			courseID = cleanResourceID
@@ -230,8 +228,8 @@ func parseEvent(scheduleIDs []string, post eventPost, teachers map[string]*model
 				eventLocations = append(eventLocations, location)
 			}
 		case "UTB_PROGRAMINSTANS_KLASSER":
-			if cleanResourceIDURLEncoded != "" {
-				resourceScheduleIDs = append(resourceScheduleIDs, cleanResourceIDURLEncoded)
+			if node.ResourceIDURLEncoded != "" {
+				resourceScheduleIDs = append(resourceScheduleIDs, node.ResourceIDURLEncoded)
 			} else {
 				resourceScheduleIDs = append(resourceScheduleIDs, cleanResourceID)
 			}
@@ -239,13 +237,10 @@ func parseEvent(scheduleIDs []string, post eventPost, teachers map[string]*model
 	}
 
 	var primaryScheduleID string
-	if len(resourceScheduleIDs) > 0 {
-		xmlScheduleID := resourceScheduleIDs[0]
-
+	for _, xmlScheduleID := range resourceScheduleIDs {
 		for _, requestedID := range scheduleIDs {
 			if dotIndex := strings.Index(requestedID, "."); dotIndex != -1 {
 				suffixAfterDot := requestedID[dotIndex+1:]
-
 				if suffixAfterDot == xmlScheduleID {
 					primaryScheduleID = requestedID
 					break
@@ -258,9 +253,13 @@ func parseEvent(scheduleIDs []string, post eventPost, teachers map[string]*model
 			}
 		}
 
-		if primaryScheduleID == "" {
-			primaryScheduleID = xmlScheduleID
+		if primaryScheduleID != "" {
+			break
 		}
+	}
+
+	if primaryScheduleID == "" && len(scheduleIDs) > 0 {
+		primaryScheduleID = scheduleIDs[0]
 	}
 
 	if courseID == "" {
@@ -272,16 +271,16 @@ func parseEvent(scheduleIDs []string, post eventPost, teachers map[string]*model
 
 	return &models.Event{
 		ID:           post.BookingID,
-		ScheduleId:   primaryScheduleID,
+		ScheduleID:   primaryScheduleID,
 		Title:        title,
-		CourseId:     courseID,
+		CourseID:     courseID,
 		CourseName:   courseName,
 		Teachers:     eventTeachers,
 		From:         timeStart,
 		To:           timeEnd,
 		Locations:    eventLocations,
 		LastModified: lastModified,
-		IsSpecial:    post.ActivityType.ID == "A",
+		IsSpecial:    false,
 	}, nil
 }
 

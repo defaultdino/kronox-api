@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -42,7 +43,13 @@ func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "schedule_ids required (comma-separated)"})
 		return
 	}
-	scheduleIDs := strings.Split(scheduleIDsParam, ",")
+
+	rawScheduleIDs := strings.Split(scheduleIDsParam, ",")
+
+	scheduleIDs := make([]string, len(rawScheduleIDs))
+	for i, id := range rawScheduleIDs {
+		scheduleIDs[i] = url.QueryEscape(id)
+	}
 
 	var language *string
 	if lang := c.Query("language"); lang != "" {

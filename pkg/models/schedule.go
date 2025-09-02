@@ -6,9 +6,9 @@ import (
 
 type Event struct {
 	ID           string      `json:"id" bson:"id"`
-	ScheduleId   string      `json:"schedule_id" bson:"schedule_id"`
+	ScheduleID   string      `json:"schedule_id" bson:"schedule_id"`
 	Title        string      `json:"title" bson:"title"`
-	CourseId     string      `json:"course_id" bson:"course_id"`
+	CourseID     string      `json:"course_id" bson:"course_id"`
 	CourseName   string      `json:"course_name" bson:"course_name"`
 	Teachers     []*Teacher  `json:"teachers" bson:"teachers"`
 	From         time.Time   `json:"from" bson:"from"`
