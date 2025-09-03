@@ -19,7 +19,7 @@ func SessionMiddleware() gin.HandlerFunc {
 
 		if sessionID == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "missing session ID (JSESSIONID)",
+				"error": "missing session_id as Bearer token (JSESSIONID)",
 			})
 			c.Abort()
 			return
