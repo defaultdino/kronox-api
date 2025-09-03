@@ -3,6 +3,7 @@ package kronox
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -44,6 +45,8 @@ func (c *client) SendRequestWithBody(ctx context.Context, method, endpoint strin
 		fullURL += separator + values.Encode()
 	}
 
+	log.Printf("sending GET request to endpoint --> %s", fullURL)
+
 	var reqBody string
 	if body != "" {
 		reqBody = body
@@ -55,18 +58,18 @@ func (c *client) SendRequestWithBody(ctx context.Context, method, endpoint strin
 	}
 
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-	
+
 	if method == http.MethodPost && body != "" {
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req.Header.Set("Content-Length", fmt.Sprintf("%d", len(reqBody)))
 	}
-	
+
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.5")
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
 	req.Header.Set("Cache-Control", "no-cache")
 	req.Header.Set("Pragma", "no-cache")
-	
+
 	if method == http.MethodPost {
 		req.Header.Set("Referer", fullURL)
 	}
@@ -110,9 +113,9 @@ func (c *client) ResetCookieJar() error {
 	if err != nil {
 		return err
 	}
-	
+
 	c.cookieJar = jar
 	c.httpClient.Jar = jar
-	
+
 	return nil
 }

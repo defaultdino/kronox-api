@@ -23,7 +23,7 @@ func ExtractScheduleIDsMiddleware() gin.HandlerFunc {
 		for i, id := range rawScheduleIDs {
 			scheduleIDs[i] = url.QueryEscape(id)
 		}
-		c.Set("schedule_ids", scheduleIDs)
+		c.Set("escaped_schedule_ids", scheduleIDs)
 		c.Next()
 	})
 }

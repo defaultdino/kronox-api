@@ -9,7 +9,6 @@ import (
 func SetupScheduleRoutes(api *gin.RouterGroup, scheduleHandler *handlers.ScheduleHandler) {
 	schedules := api.Group("/schedules")
 	schedules.Use(middleware.SchoolValidationMiddleware())
-	schedules.Use(middleware.ExtractScheduleIDsMiddleware())
 	{
 		schedules.GET("", scheduleHandler.GetSchedule)
 	}
