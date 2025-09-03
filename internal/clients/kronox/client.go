@@ -3,7 +3,6 @@ package kronox
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -44,8 +43,6 @@ func (c *client) SendRequestWithBody(ctx context.Context, method, endpoint strin
 		}
 		fullURL += separator + values.Encode()
 	}
-
-	log.Printf("sending GET request to endpoint --> %s", fullURL)
 
 	var reqBody string
 	if body != "" {

@@ -42,7 +42,7 @@ func (s *service) ParseProgrammes(html string) ([]*models.Programme, error) {
 
 		programmes = append(programmes, &models.Programme{
 			Title:    title,
-			Subtitle: subtitle,
+			Subtitle: strings.TrimSpace(subtitle),
 			Id:       id,
 		})
 	})
