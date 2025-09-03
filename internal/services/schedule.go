@@ -19,7 +19,7 @@ func NewScheduleService(app *app.App) *ScheduleService {
 	return &ScheduleService{app: app}
 }
 
-func (s *ScheduleService) GetSchedules(ctx context.Context, school string, scheduleIDs []string, language *string, startDate *time.Time) (string, error) {
+func (s *ScheduleService) GetScheduleEvents(ctx context.Context, school string, scheduleIDs []string, language *string, startDate *time.Time) (string, error) {
 	parsedDate := "idag"
 	if startDate != nil {
 		parsedDate = startDate.Format("2006-01-02")

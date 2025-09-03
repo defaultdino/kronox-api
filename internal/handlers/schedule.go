@@ -23,7 +23,7 @@ func NewScheduleHandler(scheduleService *services.ScheduleService, parserService
 	}
 }
 
-// GetSchedule godoc
+// GetScheduleEvents godoc
 // @Summary      Get schedule events
 // @Description  Retrieve schedule events for one or more schedule IDs with optional language and date filtering
 // @Tags         schedules
@@ -37,7 +37,7 @@ func NewScheduleHandler(scheduleService *services.ScheduleService, parserService
 // @Failure      400          {object}  ErrorResponse           "Missing required parameters or invalid date format"
 // @Failure      500          {object}  ErrorResponse           "Failed to fetch or parse schedule data"
 // @Router       /schedules [get]
-func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
+func (h *ScheduleHandler) GetScheduleEvents(c *gin.Context) {
 	scheduleIDsParam := c.Query("schedule_ids")
 	if scheduleIDsParam == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "schedule_ids required (comma-separated)"})
@@ -66,7 +66,7 @@ func (h *ScheduleHandler) GetSchedule(c *gin.Context) {
 	}
 
 	scheduleXML, err := AttemptOverSchoolURLs(c, func(url string) (string, error) {
-		return h.scheduleService.GetSchedules(c.Request.Context(), url, scheduleIDs, language, startDate)
+		return h.scheduleService.GetScheduleEvents(c.Request.Context(), url, scheduleIDs, language, startDate)
 	})
 
 	if err != nil {

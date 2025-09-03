@@ -10,6 +10,6 @@ func SetupScheduleRoutes(api *gin.RouterGroup, scheduleHandler *handlers.Schedul
 	schedules := api.Group("/schedules")
 	schedules.Use(middleware.SchoolValidationMiddleware())
 	{
-		schedules.GET("", scheduleHandler.GetSchedule)
+		schedules.GET("", scheduleHandler.GetScheduleEvents)
 	}
 }
