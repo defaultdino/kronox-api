@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tumble-for-kronox/kronox-api/internal/middleware"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
 	"github.com/tumble-for-kronox/kronox-api/internal/services"
+	"github.com/tumble-for-kronox/kronox-api/pkg/middleware"
 )
 
 type EventHandler struct {

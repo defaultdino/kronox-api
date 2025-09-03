@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/tumble-for-kronox/kronox-api/internal/middleware"
 	"github.com/tumble-for-kronox/kronox-api/internal/services"
+	"github.com/tumble-for-kronox/kronox-api/pkg/middleware"
 	booking "github.com/tumble-for-kronox/kronox-api/pkg/models/resource"
 )
 
