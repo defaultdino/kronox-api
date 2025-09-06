@@ -23,7 +23,7 @@ func SetupResourceRoutes(api *gin.RouterGroup, ResourceHandler *handlers.Resourc
 		resources.POST("/:resourceId", ResourceHandler.BookResource)
 
 		bookings.GET("/all", ResourceHandler.GetBookings)
-		bookings.DELETE("/:bookingId", ResourceHandler.UnbookResourceByID)
+		bookings.DELETE("/:bookingId", ResourceHandler.UnbookResource)
 		bookings.POST("/:bookingId/confirm", ResourceHandler.ConfirmResourceBookingWithBody)
 	}
 }

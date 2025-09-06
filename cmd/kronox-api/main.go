@@ -86,7 +86,7 @@ func initializeServices(app *app.App) *Services {
 
 func initializeHandlers(services *Services) *Handlers {
 	return &Handlers{
-		Auth:      handlers.NewAuthHandler(services.Auth),
+		Auth:      handlers.NewAuthHandler(services.Auth, services.Event, services.Resource),
 		Schedule:  handlers.NewScheduleHandler(services.Schedule, services.Parser),
 		Programme: handlers.NewProgrammeHandler(services.Programme, services.Parser),
 		Resource:  handlers.NewResourceHandler(services.Resource),

@@ -258,7 +258,7 @@ func (h *ResourceHandler) BookResource(c *gin.Context) {
 // @Failure      401           {object}  ErrorResponse    "Session required"
 // @Failure      500           {object}  ErrorResponse    "Internal server error"
 // @Security     BearerAuth
-// @Router       /resources/bookings/{bookingId} [delete]
+// @Router       /resources/booking/{bookingId} [delete]
 func (h *ResourceHandler) UnbookResource(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	bookingId := c.Param("bookingId")
@@ -275,45 +275,6 @@ func (h *ResourceHandler) UnbookResource(c *gin.Context) {
 
 	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
 		return h.resourceService.UnbookResource(c.Request.Context(), url, sessionID, bookingId)
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "booking cancelled successfully"})
-}
-
-// UnbookResourceByID godoc
-// @Summary      Cancel booking by ID (alternative endpoint)
-// @Description  Cancel an existing resource booking using booking ID
-// @Tags         bookings
-// @Accept       json
-// @Produce      json
-// @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
-// @Param        bookingId      path      string  true  "Booking ID to cancel"
-// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
-// @Success      200           {object}  SuccessResponse  "Booking cancelled successfully"
-// @Failure      400           {object}  ErrorResponse    "bookingId path parameter required"
-// @Failure      401           {object}  ErrorResponse    "Session required"
-// @Failure      500           {object}  ErrorResponse    "Internal server error"
-// @Security     BearerAuth
-// @Router       /bookings/{bookingId}/cancel [delete]
-func (h *ResourceHandler) UnbookResourceByID(c *gin.Context) {
-	sessionID, exists := middleware.GetSessionID(c)
-
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "session required"})
-		return
-	}
-
-	bookingID := c.Param("bookingId")
-	if bookingID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bookingId path parameter required"})
-		return
-	}
-
-	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
-		return h.resourceService.UnbookResource(c.Request.Context(), url, sessionID, bookingID)
 	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -365,51 +326,6 @@ func (h *ResourceHandler) ConfirmResourceBooking(c *gin.Context) {
 
 	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
 		return h.resourceService.ConfirmBooking(c.Request.Context(), url, sessionID, bookingId, req.ResourceID)
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "booking confirmed successfully"})
-}
-
-// ConfirmResourceBookingByID godoc
-// @Summary      Confirm booking by ID (path parameters)
-// @Description  Confirm an existing resource booking using resource ID and booking ID from path
-// @Tags         bookings
-// @Accept       json
-// @Produce      json
-// @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
-// @Param        bookingId      path      string  true  "Booking ID to confirm"
-// @Param        resourceId     path      string  true  "Resource ID for confirmation"
-// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
-// @Success      200           {object}  SuccessResponse  "Booking confirmed successfully"
-// @Failure      400           {object}  ErrorResponse    "bookingId or resourceId path parameter required"
-// @Failure      401           {object}  ErrorResponse    "Session required"
-// @Failure      500           {object}  ErrorResponse    "Internal server error"
-// @Security     BearerAuth
-// @Router       /bookings/{bookingId}/confirm/{resourceId} [post]
-func (h *ResourceHandler) ConfirmResourceBookingByID(c *gin.Context) {
-	sessionID, exists := middleware.GetSessionID(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "session required"})
-		return
-	}
-
-	bookingID := c.Param("bookingId")
-	if bookingID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bookingId path parameter required"})
-		return
-	}
-
-	resourceID := c.Param("resourceId")
-	if resourceID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "resourceId path parameter required"})
-		return
-	}
-
-	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
-		return h.resourceService.ConfirmBooking(c.Request.Context(), url, sessionID, bookingID, resourceID)
 	}); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

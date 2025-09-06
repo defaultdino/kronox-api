@@ -7,10 +7,13 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// stored in mongo
+// `omitempty` on events & bookings, since if these are not
+// retrieved then they should not be in the returnd JSON whatsoever
+// or stored in Mongo
 type User struct {
-	Name     string                `json:"name" bson:"name"`
-	Username string                `json:"username" bson:"username"`
-	Events   []*AvailableUserEvent `json:"events" bson:"events"`
-	Bookings []*booking.Booking    `json:"bookings" bson:"bookings"`
+	Name      string                `json:"name" bson:"name"`
+	Username  string                `json:"username" bson:"username"`
+	SessionID string                `json:"session_id" bson:"session_id"`
+	Events    []*AvailableUserEvent `json:"events,omitempty" bson:"events,omitempty"`
+	Bookings  []*booking.Booking    `json:"bookings,omitempty" bson:"bookings,omitempty"`
 }
