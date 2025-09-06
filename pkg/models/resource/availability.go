@@ -1,4 +1,4 @@
-package booking
+package resource
 
 type Availability string
 
