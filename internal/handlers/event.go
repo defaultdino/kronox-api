@@ -7,6 +7,7 @@ import (
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
 	"github.com/tumble-for-kronox/kronox-api/internal/services"
 	"github.com/tumble-for-kronox/kronox-api/pkg/middleware"
+	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
 )
 
 type EventHandler struct {
@@ -39,7 +40,7 @@ func (h *EventHandler) GetUserEvents(c *gin.Context) {
 		return
 	}
 
-	events, err := AttemptOverSchoolURLs(c, func(url string) (*parsers.EventsResponse, error) {
+	events, err := AttemptOverSchoolURLs(c, func(url string) (*user.EventsResponse, error) {
 		return h.eventService.GetUserEvents(c.Request.Context(), url, sessionID)
 	})
 
@@ -227,7 +228,7 @@ func (h *EventHandler) RemoveEventSupport(c *gin.Context) {
 // EventsListResponse represents the response for getting user events
 // @Description Response containing list of user events
 type EventsListResponse struct {
-	Events *parsers.EventsResponse `json:"events"`
+	Events *user.EventsResponse `json:"events"`
 }
 
 // SuccessResponse represents a successful operation response

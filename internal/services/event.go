@@ -9,6 +9,7 @@ import (
 
 	"github.com/tumble-for-kronox/kronox-api/internal/app"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
+	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
 )
 
 type EventService struct {
@@ -25,7 +26,7 @@ func NewEventService(app *app.App, sessionService *SessionService, parserService
 	}
 }
 
-func (s *EventService) GetUserEvents(ctx context.Context, schoolUrl, sessionID string) (*parsers.EventsResponse, error) {
+func (s *EventService) GetUserEvents(ctx context.Context, schoolUrl, sessionID string) (*user.EventsResponse, error) {
 	ctx = context.WithValue(ctx, sessionIDKey, sessionID)
 
 	if err := s.sessionService.SetSessionLanguage(ctx, schoolUrl, sessionID); err != nil {

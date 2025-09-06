@@ -1,12 +1,20 @@
 package user
 
-import "time"
+import (
+	"time"
+)
 
 type Event struct {
 	Title string    `json:"title"`
 	Type  string    `json:"type"`
 	Start time.Time `json:"start"`
 	End   time.Time `json:"end"`
+}
+
+type EventsResponse struct {
+	Registered   []*AvailableUserEvent
+	Unregistered []*AvailableUserEvent
+	Upcoming     []*UpcomingUserEvent
 }
 
 type AvailableUserEvent struct {

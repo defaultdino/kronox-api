@@ -10,19 +10,13 @@ import (
 	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
 )
 
-type EventsResponse struct {
-	Registered   []*user.AvailableUserEvent
-	Unregistered []*user.AvailableUserEvent
-	Upcoming     []*user.UpcomingUserEvent
-}
-
-func (s *service) ParseUserEvents(html string) (*EventsResponse, error) {
+func (s *service) ParseUserEvents(html string) (*user.EventsResponse, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
 
-	response := &EventsResponse{
+	response := &user.EventsResponse{
 		Registered:   []*user.AvailableUserEvent{},
 		Unregistered: []*user.AvailableUserEvent{},
 		Upcoming:     []*user.UpcomingUserEvent{},
