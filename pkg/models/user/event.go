@@ -12,9 +12,9 @@ type Event struct {
 }
 
 type EventsResponse struct {
-	Registered   []*AvailableUserEvent
-	Unregistered []*AvailableUserEvent
-	Upcoming     []*UpcomingUserEvent
+	Registered   []*AvailableUserEvent `json:"registered_events"`
+	Unregistered []*AvailableUserEvent `json:"unregistered_events"`
+	Upcoming     []*UpcomingUserEvent  `json:"upcoming_events"`
 }
 
 type AvailableUserEvent struct {
