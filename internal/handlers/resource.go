@@ -258,7 +258,7 @@ func (h *ResourceHandler) BookResource(c *gin.Context) {
 // @Failure      401           {object}  ErrorResponse    "Session required"
 // @Failure      500           {object}  ErrorResponse    "Internal server error"
 // @Security     BearerAuth
-// @Router       /resources/booking/{bookingId} [delete]
+// @Router       /resources/{resourceId}/book [delete]
 func (h *ResourceHandler) UnbookResource(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	bookingId := c.Param("bookingId")

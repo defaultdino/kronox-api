@@ -46,11 +46,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	// "cache" for getting events & bookings later
-	var lastSchoolUrl string
-
 	user, err := AttemptOverSchoolURLs(c, func(url string) (*user.User, error) {
-		lastSchoolUrl = url
 		return h.authService.Login(c.Request.Context(), req.Username, req.Password, url)
 	})
 
@@ -58,20 +54,6 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials or login failed"})
 		return
 	}
-
-	registeredEvents, errRegisteredEvents := h.eventService.GetUserEvents(c, lastSchoolUrl, user.SessionID)
-	bookedResources, errBookedResources := h.resourceService.GetBookedResources(c, lastSchoolUrl, user.SessionID)
-
-	if errRegisteredEvents != nil || errBookedResources != nil {
-		// we got the user just not their events OR resources
-		// for caching in mongo or returning in the object,
-		// thus they could be null in tumble-api
-		c.JSON(http.StatusOK, user)
-	}
-
-	user.Events = registeredEvents.Registered
-	user.Bookings = bookedResources
-
 	c.JSON(http.StatusOK, user)
 }
 

@@ -13,17 +13,14 @@ func SetupResourceRoutes(api *gin.RouterGroup, ResourceHandler *handlers.Resourc
 	}
 
 	resources := api.Group("/resources")
-	bookings := resources.Group("/booking")
 	resources.Use(protected...)
-	bookings.Use(protected...)
 	{
 		resources.GET("/all", ResourceHandler.GetAllResources)
 		resources.GET("/:resourceId/availability", ResourceHandler.GetAvailableResources)
 		resources.GET("/:resourceId/bookings", ResourceHandler.GetActiveBookingsForResource)
-		resources.POST("/:resourceId", ResourceHandler.BookResource)
 
-		bookings.GET("/all", ResourceHandler.GetBookings)
-		bookings.DELETE("/:bookingId", ResourceHandler.UnbookResource)
-		bookings.POST("/:bookingId/confirm", ResourceHandler.ConfirmResourceBookingWithBody)
+		resources.POST("/:resourceId/book", ResourceHandler.BookResource)
+		resources.DELETE("/:resourceId/unbook", ResourceHandler.UnbookResource)
+		resources.PUT("/booking/:bookingId/confirm", ResourceHandler.ConfirmResourceBookingWithBody)
 	}
 }
