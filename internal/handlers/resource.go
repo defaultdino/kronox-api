@@ -53,39 +53,6 @@ func (h *ResourceHandler) GetAllResources(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"resources": resources})
 }
 
-// GetBookings godoc
-// @Summary      Get user bookings
-// @Description  Retrieve all bookings made by the authenticated user
-// @Tags         bookings
-// @Accept       json
-// @Produce      json
-// @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
-// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
-// @Success      200           {object}  BookingsListResponse  "List of user bookings"
-// @Failure      401           {object}  ErrorResponse         "Session required"
-// @Failure      500           {object}  ErrorResponse         "Internal server error"
-// @Security     BearerAuth
-// @Router       /resources/bookings [get]
-func (h *ResourceHandler) GetBookings(c *gin.Context) {
-	sessionID, exists := middleware.GetSessionID(c)
-
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "session required"})
-		return
-	}
-
-	bookings, err := AttemptOverSchoolURLs(c, func(url string) ([]*booking.Booking, error) {
-		return h.resourceService.GetBookedResources(c.Request.Context(), url, sessionID)
-	})
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"bookings": bookings})
-}
-
 // GetActiveBookingsForResource godoc
 // @Summary      Get active bookings for resource
 // @Description  Retrieve all active bookings for a specific resource
@@ -133,15 +100,15 @@ func (h *ResourceHandler) GetActiveBookingsForResource(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
-// @Param        resource_id    query     string  true  "Resource ID to check availability for"
-// @Param        date          query     string  true  "Date in YYYY-MM-DD format"  Format(date)
-// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Param        resource_id    path     string  true  "Resource ID to check availability for"
+// @Param        date          	query     string  true  "Date in YYYY-MM-DD format"  Format(date)
+// @Param        school    			query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200           {object}  AvailabilityResponse  "Available time slots for the resource"
 // @Failure      400           {object}  ErrorResponse         "resource_id and date are required"
 // @Failure      401           {object}  ErrorResponse         "Session required"
 // @Failure      500           {object}  ErrorResponse         "Internal server error"
 // @Security     BearerAuth
-// @Router       /resources/availability [get]
+// @Router       /resources/{resourceId}/availability [get]
 func (h *ResourceHandler) GetResourceAvailability(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	if !exists {
@@ -149,7 +116,7 @@ func (h *ResourceHandler) GetResourceAvailability(c *gin.Context) {
 		return
 	}
 
-	resourceID := c.Query("resource_id")
+	resourceID := c.Param("resource_id")
 	if resourceID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "resource_id required"})
 		return
@@ -193,7 +160,7 @@ func (h *ResourceHandler) GetResourceAvailability(c *gin.Context) {
 // @Failure      401           {object}                  ErrorResponse            "Session required"
 // @Failure      500           {object}                  ErrorResponse            "Internal server error"
 // @Security     BearerAuth
-// @Router       /resources/{resourceId}/book [post]
+// @Router       /resources/booking/{resourceId}/book [post]
 func (h *ResourceHandler) BookResource(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	resourceId := c.Param("resourceId")
@@ -244,6 +211,39 @@ func (h *ResourceHandler) BookResource(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "booking successful"})
 }
 
+// GetBookings godoc
+// @Summary      Get user bookings
+// @Description  Retrieve all bookings made by the authenticated user
+// @Tags         bookings
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
+// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Success      200           {object}  BookingsListResponse  "List of user bookings"
+// @Failure      401           {object}  ErrorResponse         "Session required"
+// @Failure      500           {object}  ErrorResponse         "Internal server error"
+// @Security     BearerAuth
+// @Router       /resources/booking/all [get]
+func (h *ResourceHandler) GetBookings(c *gin.Context) {
+	sessionID, exists := middleware.GetSessionID(c)
+
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "session required"})
+		return
+	}
+
+	bookings, err := AttemptOverSchoolURLs(c, func(url string) ([]*booking.Booking, error) {
+		return h.resourceService.GetBookedResources(c.Request.Context(), url, sessionID)
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"bookings": bookings})
+}
+
 // UnbookResource godoc
 // @Summary      Cancel a booking
 // @Description  Cancel an existing resource booking
@@ -258,7 +258,7 @@ func (h *ResourceHandler) BookResource(c *gin.Context) {
 // @Failure      401           {object}  ErrorResponse    "Session required"
 // @Failure      500           {object}  ErrorResponse    "Internal server error"
 // @Security     BearerAuth
-// @Router       /resources/{resourceId}/book [delete]
+// @Router       /resources/booking/{bookingId}/unbook [post]
 func (h *ResourceHandler) UnbookResource(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	bookingId := c.Param("bookingId")
@@ -298,7 +298,7 @@ func (h *ResourceHandler) UnbookResource(c *gin.Context) {
 // @Failure      401           {object}                       ErrorResponse                   "Session required"
 // @Failure      500           {object}                       ErrorResponse                   "Internal server error"
 // @Security     BearerAuth
-// @Router       /resources/bookings/{bookingId}/confirm [post]
+// @Router       /resources/bookings/{bookingId}/confirm [put]
 func (h *ResourceHandler) ConfirmResourceBooking(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 	bookingId := c.Param("bookingId")
@@ -334,122 +334,22 @@ func (h *ResourceHandler) ConfirmResourceBooking(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "booking confirmed successfully"})
 }
 
-// GetAvailableResources godoc
-// @Summary      Get available resources (alternative endpoint)
-// @Description  Get available time slots for a specific resource on a given date using path parameter
-// @Tags         resources
-// @Accept       json
-// @Produce      json
-// @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
-// @Param        resourceId     path      string  true  "Resource ID to check availability for"
-// @Param        date          query     string  true  "Date in YYYY-MM-DD format"  Format(date)
-// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
-// @Success      200           {object}  AvailabilityResponse  "Available time slots for the resource"
-// @Failure      400           {object}  ErrorResponse         "resourceId and date are required"
-// @Failure      401           {object}  ErrorResponse         "Session required"
-// @Failure      500           {object}  ErrorResponse         "Internal server error"
-// @Security     BearerAuth
-// @Router       /resources/{resourceId}/availability [get]
-func (h *ResourceHandler) GetAvailableResources(c *gin.Context) {
-	sessionID, exists := middleware.GetSessionID(c)
-
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "session required"})
-		return
-	}
-
-	resourceID := c.Param("resourceId")
-	if resourceID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "resourceId path parameter required"})
-		return
-	}
-
-	dateStr := c.Query("date")
-	if dateStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "date required (YYYY-MM-DD format)"})
-		return
-	}
-
-	date, err := time.Parse("2006-01-02", dateStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD"})
-		return
-	}
-
-	availability, err := AttemptOverSchoolURLs(c, func(url string) ([]*booking.AvailabilitySlot, error) {
-		return h.resourceService.GetAvailableResources(c.Request.Context(), url, sessionID, date, resourceID)
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"availability": availability})
-}
-
-// ConfirmResourceBookingWithBody godoc
-// @Summary      Confirm booking with resource ID in body
-// @Description  Confirm an existing resource booking with resource ID provided in request body
-// @Tags         bookings
-// @Accept       json
-// @Produce      json
-// @Param        Authorization  header                string                     true  "Bearer token (session ID)"  Format(Bearer {session_id})
-// @Param        bookingId      path                  string                     true  "Booking ID to confirm"
-// @Param        resource       body                  ConfirmBookingBodyRequest  true  "Resource ID for confirmation"
-// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
-// @Success      200           {object}              SuccessResponse            "Booking confirmed successfully"
-// @Failure      400           {object}              ErrorResponse              "bookingId path parameter or resourceId in body required"
-// @Failure      401           {object}              ErrorResponse              "Session required"
-// @Failure      500           {object}              ErrorResponse              "Internal server error"
-// @Security     BearerAuth
-// @Router       /bookings/{bookingId}/confirm [post]
-func (h *ResourceHandler) ConfirmResourceBookingWithBody(c *gin.Context) {
-	sessionID, exists := middleware.GetSessionID(c)
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "session required"})
-		return
-	}
-
-	bookingID := c.Param("bookingId")
-	if bookingID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bookingId path parameter required"})
-		return
-	}
-
-	var req struct {
-		ResourceID string `json:"resourceId" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "resourceId is required in request body"})
-		return
-	}
-
-	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
-		return h.resourceService.ConfirmBooking(c.Request.Context(), url, sessionID, bookingID, req.ResourceID)
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "booking confirmed successfully"})
-}
-
 // ResourcesListResponse represents the response for getting resources
 // @Description Response containing list of available resources
 type ResourcesListResponse struct {
 	Resources []*booking.Resource `json:"resources"`
 }
 
-// BookingsListResponse represents the response for getting bookings
-// @Description Response containing list of bookings
-type BookingsListResponse struct {
-	Bookings []*booking.Booking `json:"bookings"`
-}
-
 // AvailabilityResponse represents the response for resource availability
 // @Description Response containing available time slots
 type AvailabilityResponse struct {
 	Availability []*booking.AvailabilitySlot `json:"availability"`
+}
+
+// BookingsListResponse represents the response for getting bookings
+// @Description Response containing list of bookings
+type BookingsListResponse struct {
+	Bookings []*booking.Booking `json:"bookings"`
 }
 
 // ConfirmBookingBodyRequest represents request body for booking confirmation

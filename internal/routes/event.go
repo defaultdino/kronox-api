@@ -20,10 +20,10 @@ func SetupEventRoutes(api *gin.RouterGroup, EventHandler *handlers.EventHandler)
 		events.GET("/all", EventHandler.GetUserEvents)
 
 		events.POST("/:eventId/register", EventHandler.RegisterUserEvent)
-		events.DELETE("/:eventId/unregister", EventHandler.UnregisterUserEvent)
+		events.PUT("/:eventId/unregister", EventHandler.UnregisterUserEvent)
 
 		support.POST("/:participatorId/:supportId", EventHandler.AddEventSupport)
-		support.DELETE("/:eventId/:participatorId/:supportId", EventHandler.RemoveEventSupport)
+		support.PUT("/:eventId/:participatorId/:supportId", EventHandler.RemoveEventSupport)
 
 		support.POST("/add/:participatorId", EventHandler.AddEventSupport)
 		support.POST("/remove/:participatorId", EventHandler.RemoveEventSupport)
