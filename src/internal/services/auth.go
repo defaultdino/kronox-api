@@ -83,8 +83,9 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 		}
 
 		return &user.User{
-			Name:     userInfo.Name,
-			Username: userInfo.Username,
+			Name:      userInfo.Name,
+			Username:  userInfo.Username,
+			SessionID: sessionID,
 		}, nil
 	}
 

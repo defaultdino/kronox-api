@@ -19,10 +19,10 @@ func SetupResourceRoutes(api *gin.RouterGroup, resourceHandler *handlers.Resourc
 		resources.GET("/all", resourceHandler.GetAllResources)
 		resources.GET("/:resourceId/availability", resourceHandler.GetResourceAvailability)
 		resources.GET("/:resourceId/bookings", resourceHandler.GetActiveBookingsForResource)
+		resources.POST("/:resourceId/bookings", resourceHandler.BookResource)
 
-		resources.GET("/booking/all", resourceHandler.GetBookings)
-		resources.POST("/booking/:bookingId/book", resourceHandler.BookResource)
-		resources.POST("/booking/:bookingId/unbook", resourceHandler.UnbookResource)
-		resources.PUT("/booking/:bookingId/confirm", resourceHandler.ConfirmResourceBooking)
+		resources.GET("/bookings", resourceHandler.GetBookings)
+		resources.DELETE("/bookings/:bookingId", resourceHandler.UnbookResource)
+		resources.PUT("/bookings/:bookingId/confirm", resourceHandler.ConfirmResourceBooking)
 	}
 }

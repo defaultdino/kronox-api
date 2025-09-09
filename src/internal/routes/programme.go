@@ -7,7 +7,7 @@ import (
 )
 
 func SetupProgrammeRoutes(api *gin.RouterGroup, programmeHandler *handlers.ProgrammeHandler) {
-	programmes := api.Group("/programmes")
+	programmes := api.Group("/programme/search")
 	programmes.Use(middleware.SchoolValidationMiddleware())
 	{
 		programmes.GET("", programmeHandler.SearchProgrammes)
