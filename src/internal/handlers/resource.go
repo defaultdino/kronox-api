@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"time"
 
@@ -46,7 +47,11 @@ func (h *ResourceHandler) GetAllResources(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -85,8 +90,13 @@ func (h *ResourceHandler) GetActiveBookingsForResource(c *gin.Context) {
 	bookings, err := AttemptOverSchoolURLs(c, func(url string) ([]*booking.Booking, error) {
 		return h.resourceService.GetActiveResourceBookings(c.Request.Context(), url, sessionID, resourceID)
 	})
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -137,8 +147,13 @@ func (h *ResourceHandler) GetResourceAvailability(c *gin.Context) {
 	availability, err := AttemptOverSchoolURLs(c, func(url string) ([]*booking.AvailabilitySlot, error) {
 		return h.resourceService.GetAvailableResources(c.Request.Context(), url, sessionID, date, resourceID)
 	})
+
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -201,10 +216,16 @@ func (h *ResourceHandler) BookResource(c *gin.Context) {
 		return
 	}
 
-	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := AttemptOverSchoolURLsBool(c, func(url string) error {
 		return h.resourceService.BookResource(c.Request.Context(), url, sessionID, &req, resourceId)
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	})
+
+	if err != nil {
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -223,7 +244,7 @@ func (h *ResourceHandler) BookResource(c *gin.Context) {
 // @Failure      401           {object}  ErrorResponse         "Session required"
 // @Failure      500           {object}  ErrorResponse         "Internal server error"
 // @Security     BearerAuth
-// @Router       /resources/booking/all [get]
+// @Router       /resources/bookings [get]
 func (h *ResourceHandler) GetBookings(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
 
@@ -238,7 +259,12 @@ func (h *ResourceHandler) GetBookings(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if services.IsAuthError(err) {
+			log.Print("Received error right here")
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -274,10 +300,16 @@ func (h *ResourceHandler) UnbookResource(c *gin.Context) {
 		return
 	}
 
-	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := AttemptOverSchoolURLsBool(c, func(url string) error {
 		return h.resourceService.UnbookResource(c.Request.Context(), url, sessionID, bookingId)
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	})
+
+	if err != nil {
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -325,10 +357,16 @@ func (h *ResourceHandler) ConfirmResourceBooking(c *gin.Context) {
 		return
 	}
 
-	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := AttemptOverSchoolURLsBool(c, func(url string) error {
 		return h.resourceService.ConfirmBooking(c.Request.Context(), url, sessionID, bookingId, req.ResourceID)
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	})
+
+	if err != nil {
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 

@@ -55,7 +55,11 @@ func (h *EventHandler) GetUserEvents(c *gin.Context) {
 	})
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -90,10 +94,16 @@ func (h *EventHandler) RegisterUserEvent(c *gin.Context) {
 		return
 	}
 
-	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := AttemptOverSchoolURLsBool(c, func(url string) error {
 		return h.eventService.RegisterUserEvent(c.Request.Context(), url, sessionID, userEventID)
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	})
+
+	if err != nil {
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -128,10 +138,16 @@ func (h *EventHandler) UnregisterUserEvent(c *gin.Context) {
 		return
 	}
 
-	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := AttemptOverSchoolURLsBool(c, func(url string) error {
 		return h.eventService.UnregisterUserEvent(c.Request.Context(), url, sessionID, userEventID)
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	})
+
+	if err != nil {
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -173,10 +189,16 @@ func (h *EventHandler) AddEventSupport(c *gin.Context) {
 		return
 	}
 
-	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := AttemptOverSchoolURLsBool(c, func(url string) error {
 		return h.eventService.AddEventSupport(c.Request.Context(), url, sessionID, participatorID, supportID)
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	})
+
+	if err != nil {
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
@@ -225,10 +247,16 @@ func (h *EventHandler) RemoveEventSupport(c *gin.Context) {
 		return
 	}
 
-	if err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := AttemptOverSchoolURLsBool(c, func(url string) error {
 		return h.eventService.RemoveEventSupport(c.Request.Context(), url, sessionID, userEventID, participatorID, supportID)
-	}); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	})
+
+	if err != nil {
+		if services.IsAuthError(err) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 

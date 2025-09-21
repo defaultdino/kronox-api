@@ -2,7 +2,6 @@ package parsers
 
 import (
 	"fmt"
-	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -66,14 +65,10 @@ func (s *service) ParsePersonalBookings(html string, resourceID string) ([]*book
 }
 
 func parseBookingNode(s *goquery.Selection, resourceID string) (*booking.Booking, error) {
-	id, exists := s.Attr("id")
+	_, exists := s.Attr("id")
 	if !exists {
 		return nil, fmt.Errorf("no booking ID found")
 	}
-	bookingID := strings.TrimPrefix(strings.TrimSpace(id), "post_")
-
-	log.Printf("Parsing booking with ID: %s\n", bookingID)
-
 	var showConfirmButton, showUnbookButton bool
 
 	s.Find("a").Each(func(i int, link *goquery.Selection) {
@@ -102,8 +97,6 @@ func parseBookingNode(s *goquery.Selection, resourceID string) (*booking.Booking
 	}).First()
 
 	dateText := strings.TrimSpace(dateAnchor.Text())
-
-	log.Printf("Booking has DATE: %s\n", dateText)
 
 	var textParts []string
 	firstDiv.Contents().Each(func(i int, node *goquery.Selection) {

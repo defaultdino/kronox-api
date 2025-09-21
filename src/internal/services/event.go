@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/tumble-for-kronox/kronox-api/internal/app"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
 	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
@@ -32,14 +31,9 @@ func (s *EventService) GetSessionManager() *SessionManager {
 }
 
 func (s *EventService) GetUserEvents(ctx context.Context, schoolUrl, sessionID string) (*user.EventsResponse, error) {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return nil, fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
-		fmt.Fprintf(gin.DefaultWriter, "Failed to set session language: %v\n", err)
-		return nil, fmt.Errorf("failed to set session language: %w", err)
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return nil, err
 	}
 
 	endpoint := fmt.Sprintf("%s/aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))
@@ -77,13 +71,9 @@ func (s *EventService) GetUserEvents(ctx context.Context, schoolUrl, sessionID s
 }
 
 func (s *EventService) RegisterUserEvent(ctx context.Context, schoolUrl, sessionID, userEventID string) error {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
-		return fmt.Errorf("failed to set session language: %w", err)
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return err
 	}
 
 	endpoint := fmt.Sprintf("%s/ajax/ajax_aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))
@@ -108,13 +98,9 @@ func (s *EventService) RegisterUserEvent(ctx context.Context, schoolUrl, session
 }
 
 func (s *EventService) UnregisterUserEvent(ctx context.Context, schoolUrl, sessionID, userEventID string) error {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
-		return fmt.Errorf("failed to set session language: %w", err)
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return err
 	}
 
 	endpoint := fmt.Sprintf("%s/ajax/ajax_aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))
@@ -138,13 +124,9 @@ func (s *EventService) UnregisterUserEvent(ctx context.Context, schoolUrl, sessi
 }
 
 func (s *EventService) AddEventSupport(ctx context.Context, schoolUrl, sessionID, participatorID, supportID string) error {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
-		return fmt.Errorf("failed to set session language: %w", err)
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return err
 	}
 
 	endpoint := fmt.Sprintf("%s/ajax/ajax_aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))
@@ -169,13 +151,9 @@ func (s *EventService) AddEventSupport(ctx context.Context, schoolUrl, sessionID
 }
 
 func (s *EventService) RemoveEventSupport(ctx context.Context, schoolUrl, sessionID, userEventID, participatorID, supportID string) error {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
-		return fmt.Errorf("failed to set session language: %w", err)
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return err
 	}
 
 	endpoint := fmt.Sprintf("%s/ajax/ajax_aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -132,10 +133,10 @@ func (sm *SessionManager) ValidateSession(ctx context.Context, sessionID, school
 	return isAuthenticated, nil
 }
 
-func (sm *SessionManager) SetSessionLanguage(ctx context.Context, sessionID, schoolURL string) error {
+func (sm *SessionManager) setSessionLanguage(ctx context.Context, sessionID, schoolURL string) error {
 	userSession, exists := sm.GetSession(sessionID)
 	if !exists {
-		return fmt.Errorf("session not found")
+		return ErrSessionNotFound
 	}
 
 	endpoint := fmt.Sprintf("%s/ajax/ajax_lang.jsp", strings.TrimSuffix(schoolURL, "/"))
@@ -146,15 +147,35 @@ func (sm *SessionManager) SetSessionLanguage(ctx context.Context, sessionID, sch
 	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
 	response, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, params)
 	if err != nil {
+		// Network error - don't remove session, could be temporary
 		return fmt.Errorf("failed to set session language: %w", err)
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("failed to set session language, status code: %d", response.StatusCode)
+		// Session is expired/invalid - remove it and return auth error
+		fmt.Fprintf(gin.DefaultWriter, "SetSessionLanguage: Session %s expired (status %d), removing from manager\n", sessionID, response.StatusCode)
+		sm.RemoveSession(sessionID)
+		return ErrSessionExpired
 	}
 
 	return nil
+}
+
+func (sm *SessionManager) ValidateAndPrepareSession(ctx context.Context, sessionID, schoolURL string) (*UserSession, error) {
+	userSession, exists := sm.GetSession(sessionID)
+	if !exists {
+		return nil, ErrSessionNotFound
+	}
+
+	if err := sm.setSessionLanguage(ctx, sessionID, schoolURL); err != nil {
+		if errors.Is(err, ErrSessionExpired) {
+			return nil, ErrSessionExpired
+		}
+		return nil, err
+	}
+
+	return userSession, nil
 }
 
 func (sm *SessionManager) cleanupExpiredSessions() {

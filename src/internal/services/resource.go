@@ -29,13 +29,9 @@ func NewResourceService(app *app.App, sessionManager *SessionManager, parserServ
 }
 
 func (s *ResourceService) GetResources(ctx context.Context, schoolUrl string, sessionID string) ([]*booking.Resource, error) {
-	_, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return nil, fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
-		return nil, fmt.Errorf("failed to set session language: %w", err)
+	_, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return nil, err
 	}
 
 	resourcesHTML, err := s.getResourcesHTML(ctx, schoolUrl, sessionID)
@@ -52,15 +48,9 @@ func (s *ResourceService) GetResources(ctx context.Context, schoolUrl string, se
 }
 
 func (s *ResourceService) GetBookedResources(ctx context.Context, schoolUrl string, sessionID string) ([]*booking.Booking, error) {
-	_, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return nil, fmt.Errorf("session not found or expired")
-	}
-
-	fmt.Printf("Using session identifier '%s'", sessionID)
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
-		return nil, fmt.Errorf("failed to set session language: %w", err)
+	_, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return nil, err
 	}
 
 	resourcesHTML, err := s.getResourcesHTML(ctx, schoolUrl, sessionID)
@@ -94,13 +84,9 @@ func (s *ResourceService) GetBookedResources(ctx context.Context, schoolUrl stri
 }
 
 func (s *ResourceService) GetActiveResourceBookings(ctx context.Context, schoolUrl, sessionID, resourceID string) ([]*booking.Booking, error) {
-	_, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return nil, fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
-		return nil, fmt.Errorf("failed to set session language: %w", err)
+	_, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return nil, err
 	}
 
 	bookingsHTML, err := s.getActiveResourceBookings(ctx, schoolUrl, sessionID, resourceID)
@@ -117,11 +103,6 @@ func (s *ResourceService) GetActiveResourceBookings(ctx context.Context, schoolU
 }
 
 func (s *ResourceService) GetAvailableResources(ctx context.Context, school, sessionID string, date time.Time, resourceID string) ([]*booking.AvailabilitySlot, error) {
-	_, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return nil, fmt.Errorf("session not found or expired")
-	}
-
 	html, err := s.getAvailableResourcesHTML(ctx, school, sessionID, date, resourceID)
 	if err != nil {
 		return nil, err
@@ -130,19 +111,15 @@ func (s *ResourceService) GetAvailableResources(ctx context.Context, school, ses
 	return s.parserService.ParseResourceAvailability(html, date)
 }
 
-func (s *ResourceService) BookResource(ctx context.Context, school, sessionID string, req *booking.BookingRequest, resourceId string) error {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, school); err != nil {
-		return fmt.Errorf("failed to set session language: %w", err)
+func (s *ResourceService) BookResource(ctx context.Context, schoolUrl, sessionID string, req *booking.BookingRequest, resourceId string) error {
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return err
 	}
 
 	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
 
-	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(school, "/"))
+	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	params := map[string]string{
 		"op":        "boka",
 		"datum":     req.Date.Format("06-01-02"),
@@ -166,25 +143,20 @@ func (s *ResourceService) BookResource(ctx context.Context, school, sessionID st
 
 	content := string(body)
 	if content != "OK" {
-		return s.handleBookingError(content, school, req, resourceId)
+		return s.handleBookingError(content, schoolUrl, req, resourceId)
 	}
 
 	return nil
 }
 
-func (s *ResourceService) UnbookResource(ctx context.Context, school, sessionID, bookingID string) error {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return fmt.Errorf("session not found or expired")
+func (s *ResourceService) UnbookResource(ctx context.Context, schoolUrl, sessionID, bookingID string) error {
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return err
 	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, school); err != nil {
-		return fmt.Errorf("failed to set session language: %w", err)
-	}
-
 	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
 
-	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(school, "/"))
+	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	params := map[string]string{
 		"op":         "avboka",
 		"bokningsId": bookingID,
@@ -203,25 +175,21 @@ func (s *ResourceService) UnbookResource(ctx context.Context, school, sessionID,
 
 	content := string(body)
 	if content != "OK" {
-		return s.handleUnbookingError(content, school, bookingID)
+		return s.handleUnbookingError(content, schoolUrl, bookingID)
 	}
 
 	return nil
 }
 
-func (s *ResourceService) ConfirmBooking(ctx context.Context, school, sessionID, bookingID, resourceID string) error {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, school); err != nil {
-		return fmt.Errorf("failed to set session language: %w", err)
+func (s *ResourceService) ConfirmBooking(ctx context.Context, schoolUrl, sessionID, bookingID, resourceID string) error {
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return err
 	}
 
 	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
 
-	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(school, "/"))
+	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	params := map[string]string{
 		"op":         "konfirmera",
 		"flik":       resourceID,
@@ -238,13 +206,9 @@ func (s *ResourceService) ConfirmBooking(ctx context.Context, school, sessionID,
 }
 
 func (s *ResourceService) getResourcesHTML(ctx context.Context, schoolUrl string, sessionID string) (string, error) {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return "", fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
-		return "", fmt.Errorf("failed to set session language: %w", err)
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return "", err
 	}
 
 	endpoint := fmt.Sprintf("%s/resursbokning.jsp", strings.TrimSuffix(schoolUrl, "/"))
@@ -276,13 +240,9 @@ func (s *ResourceService) getResourcesHTML(ctx context.Context, schoolUrl string
 }
 
 func (s *ResourceService) getActiveResourceBookings(ctx context.Context, schoolUrl string, sessionID, resourceID string) (string, error) {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return "", fmt.Errorf("session not found or expired")
-	}
-
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
-		return "", fmt.Errorf("failed to set session language: %w", err)
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return "", err
 	}
 
 	date := time.Now()
@@ -307,17 +267,13 @@ func (s *ResourceService) getActiveResourceBookings(ctx context.Context, schoolU
 	return string(body), nil
 }
 
-func (s *ResourceService) getAvailableResourcesHTML(ctx context.Context, school, sessionID string, date time.Time, resourceID string) (string, error) {
-	userSession, exists := s.sessionManager.GetSession(sessionID)
-	if !exists {
-		return "", fmt.Errorf("session not found or expired")
+func (s *ResourceService) getAvailableResourcesHTML(ctx context.Context, schoolUrl, sessionID string, date time.Time, resourceID string) (string, error) {
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	if err != nil {
+		return "", err
 	}
 
-	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, school); err != nil {
-		return "", fmt.Errorf("failed to set session language: %w", err)
-	}
-
-	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(school, "/"))
+	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	params := map[string]string{
 		"op":    "hamtaBokningar",
 		"datum": date.Format("06-01-02"),
@@ -339,7 +295,7 @@ func (s *ResourceService) getAvailableResourcesHTML(ctx context.Context, school,
 	return string(body), nil
 }
 
-func (s *ResourceService) handleBookingError(content, school string, req *booking.BookingRequest, resourceId string) error {
+func (s *ResourceService) handleBookingError(content, schoolUrl string, req *booking.BookingRequest, resourceId string) error {
 	switch {
 	case strings.Contains(content, "do not have permissions to book resources"):
 		return fmt.Errorf("kronox failed to authorize the user credentials")
@@ -349,7 +305,7 @@ func (s *ResourceService) handleBookingError(content, school string, req *bookin
 		return fmt.Errorf("you have already created max number of bookings")
 	default:
 		return fmt.Errorf("something went wrong while booking resource. Details:\nschoolUrl: %s\ndate: %s\nresourceId: %s\nlocationId: %s\nresourceType: %s\ntimeSlotId: %s\nError: %s",
-			school,
+			schoolUrl,
 			req.Date.Format("02-01-06"),
 			resourceId,
 			*req.Slot.LocationId,
@@ -359,13 +315,13 @@ func (s *ResourceService) handleBookingError(content, school string, req *bookin
 	}
 }
 
-func (s *ResourceService) handleUnbookingError(content, school, bookingID string) error {
+func (s *ResourceService) handleUnbookingError(content, schoolUrl, bookingID string) error {
 	switch content {
 	case "Din användare har inte rättigheter att skapa resursbokningar.":
 		return fmt.Errorf("kronox failed to authorize the user credentials")
 	case "Du kan inte radera resursbokningar där du inte är bokare eller deltagare":
-		return fmt.Errorf("couldn't unbook resource. Details:\nschoolUrl: %s\nbookingId: %s", school, bookingID)
+		return fmt.Errorf("couldn't unbook resource. Details:\nschoolUrl: %s\nbookingId: %s", schoolUrl, bookingID)
 	default:
-		return fmt.Errorf("something went wrong while unbooking resource. Details:\nschoolUrl: %s\nbookingId: %s\nError: %s", school, bookingID, content)
+		return fmt.Errorf("something went wrong while unbooking resource. Details:\nschoolUrl: %s\nbookingId: %s\nError: %s", schoolUrl, bookingID, content)
 	}
 }
