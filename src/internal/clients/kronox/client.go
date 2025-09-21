@@ -96,6 +96,28 @@ func (c *client) SendRequestWithBody(ctx context.Context, method, endpoint strin
 	return resp, nil
 }
 
+func (c *client) GetCookieJar() http.CookieJar {
+	return c.cookieJar
+}
+
+func (c *client) CopyCookiesFrom(other Client, schoolUrl string) error {
+	otherJar := other.GetCookieJar()
+	if otherJar == nil {
+		return nil
+	}
+
+	parsedURL, err := url.Parse(schoolUrl)
+	if err != nil {
+		return fmt.Errorf("failed to parse school URL: %w", err)
+	}
+
+	cookies := otherJar.Cookies(parsedURL)
+
+	c.cookieJar.SetCookies(parsedURL, cookies)
+
+	return nil
+}
+
 func getSessionFromContext(ctx context.Context) string {
 	if sessionID := ctx.Value("session_id"); sessionID != nil {
 		if sid, ok := sessionID.(string); ok {
@@ -103,16 +125,4 @@ func getSessionFromContext(ctx context.Context) string {
 		}
 	}
 	return ""
-}
-
-func (c *client) ResetCookieJar() error {
-	jar, err := cookiejar.New(nil)
-	if err != nil {
-		return err
-	}
-
-	c.cookieJar = jar
-	c.httpClient.Jar = jar
-
-	return nil
 }

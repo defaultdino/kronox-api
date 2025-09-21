@@ -9,27 +9,29 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tumble-for-kronox/kronox-api/internal/app"
+	"github.com/tumble-for-kronox/kronox-api/internal/clients/kronox"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
 	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
 )
 
 type AuthService struct {
-	app           *app.App
-	parserService parsers.ParserService
+	app            *app.App
+	parserService  parsers.ParserService
+	sessionManager *SessionManager
 }
 
-func NewAuthService(app *app.App, parserService parsers.ParserService) *AuthService {
+func NewAuthService(app *app.App, parserService parsers.ParserService, sessionManager *SessionManager) *AuthService {
 	return &AuthService{
-		app:           app,
-		parserService: parserService,
+		app:            app,
+		parserService:  parserService,
+		sessionManager: sessionManager,
 	}
 }
 
 func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl string) (*user.User, error) {
-	if err := s.app.KronoxClient.ResetCookieJar(); err != nil {
-		log.Printf("Warning: Failed to reset cookie jar: %v\n", err)
-	}
+	client := s.app.NewKronoxClient()
 
 	endpoint := fmt.Sprintf("%s/login_do.jsp", strings.TrimSuffix(schoolUrl, "/"))
 
@@ -37,7 +39,7 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 		url.QueryEscape(username),
 		url.QueryEscape(password))
 
-	resp, err := s.app.KronoxClient.SendRequestWithBody(ctx, http.MethodPost, endpoint, map[string]string{}, postData)
+	resp, err := client.SendRequestWithBody(ctx, http.MethodPost, endpoint, map[string]string{}, postData)
 	if err != nil {
 		return nil, fmt.Errorf("login request failed: %w", err)
 	}
@@ -57,6 +59,18 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 		return nil, fmt.Errorf("no session cookie found - login likely failed")
 	}
 
+	userSession := s.sessionManager.CreateSession(sessionID, username, schoolUrl)
+
+	fmt.Fprintf(gin.DefaultWriter, "Login: Created session with ID: %s for user: %s\n", sessionID, username)
+	fmt.Fprintf(gin.DefaultWriter, "Login: Session manager now has %d sessions\n", s.sessionManager.GetSessionCount())
+
+	if err := s.copyAuthenticationState(client, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Login: Failed to copy auth state: %v\n", err)
+		return nil, fmt.Errorf("failed to copy authentication state: %w", err)
+	} else {
+		fmt.Fprintf(gin.DefaultWriter, "Login: Successfully copied authentication state\n")
+	}
+
 	if resp.StatusCode == http.StatusFound {
 		location := resp.Header.Get("Location")
 		if location == "" {
@@ -64,8 +78,7 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 		}
 
 		ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
-
-		redirectResp, err := s.app.KronoxClient.SendRequest(ctxWithSession, http.MethodGet, location, map[string]string{})
+		redirectResp, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, location, map[string]string{})
 		if err != nil {
 			return nil, fmt.Errorf("failed to follow redirect: %w", err)
 		}
@@ -107,37 +120,21 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 	}
 
 	return &user.User{
-		Name:     userInfo.Name,
-		Username: userInfo.Username,
+		Name:      userInfo.Name,
+		Username:  userInfo.Username,
+		SessionID: sessionID,
 	}, nil
 }
 
 func (s *AuthService) ValidateSession(ctx context.Context, sessionID, schoolUrl string) (bool, error) {
-	ctx = context.WithValue(ctx, sessionIDKey, sessionID)
+	return s.sessionManager.ValidateSession(ctx, sessionID, schoolUrl)
+}
 
-	endpoint := fmt.Sprintf("%s/start.jsp", strings.TrimSuffix(schoolUrl, "/"))
-	response, err := s.app.KronoxClient.SendRequest(ctx, http.MethodGet, endpoint, map[string]string{})
-	if err != nil {
-		return false, fmt.Errorf("failed to validate session: %w", err)
-	}
-	defer response.Body.Close()
+func (s *AuthService) Logout(sessionID string) error {
+	s.sessionManager.RemoveSession(sessionID)
+	return nil
+}
 
-	if response.StatusCode == http.StatusOK {
-		body, err := io.ReadAll(response.Body)
-		if err != nil {
-			return false, fmt.Errorf("failed to read validation response: %w", err)
-		}
-
-		bodyStr := string(body)
-
-		// when authenticated: shows "Hej [Name]" and navigation links
-		// when not authenticated: shows login form with "Användarnamn:" and "Lösenord:"
-		isAuthenticated := strings.Contains(bodyStr, "Hej ") &&
-			!strings.Contains(bodyStr, "Användarnamn:") &&
-			!strings.Contains(bodyStr, "Lösenord:")
-
-		return isAuthenticated, nil
-	}
-
-	return false, nil
+func (s *AuthService) copyAuthenticationState(loginClient, sessionClient kronox.Client, schoolUrl string) error {
+	return sessionClient.CopyCookiesFrom(loginClient, schoolUrl)
 }

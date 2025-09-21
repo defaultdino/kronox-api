@@ -42,7 +42,9 @@ func (s *ScheduleService) GetScheduleEvents(ctx context.Context, school string, 
 		"resurser":       strings.Join(scheduleIDs, ","),
 	}
 
-	response, err := s.app.KronoxClient.SendRequest(ctx, http.MethodGet, endpoint, params)
+	client := s.app.NewKronoxClient()
+
+	response, err := client.SendRequest(ctx, http.MethodGet, endpoint, params)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch schedule: %w", err)
 	}

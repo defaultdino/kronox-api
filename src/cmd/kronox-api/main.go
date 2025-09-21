@@ -41,7 +41,6 @@ func main() {
 		log.Fatalf("Failed to initialize app: %v", err)
 	}
 	services := initializeServices(app)
-
 	handlers := initializeHandlers(services)
 
 	r := setupRouter(app, handlers)
@@ -54,7 +53,7 @@ func main() {
 type Services struct {
 	Parser    parsers.ParserService
 	Auth      *services.AuthService
-	Session   *services.SessionService
+	Session   *services.SessionManager
 	Schedule  *services.ScheduleService
 	Programme *services.ProgrammeService
 	Resource  *services.ResourceService
@@ -71,16 +70,16 @@ type Handlers struct {
 
 func initializeServices(app *app.App) *Services {
 	parserService := parsers.NewParserService()
-	sessionService := services.NewSessionService(app)
+	sessionManager := services.NewSessionManager(app)
 
 	return &Services{
 		Parser:    parserService,
-		Session:   sessionService,
-		Auth:      services.NewAuthService(app, parserService),
+		Session:   sessionManager,
+		Auth:      services.NewAuthService(app, parserService, sessionManager),
 		Schedule:  services.NewScheduleService(app),
 		Programme: services.NewProgrammeService(app),
-		Resource:  services.NewResourceService(app, sessionService, parserService),
-		Event:     services.NewEventService(app, sessionService, parserService),
+		Resource:  services.NewResourceService(app, sessionManager, parserService),
+		Event:     services.NewEventService(app, parserService, sessionManager),
 	}
 }
 

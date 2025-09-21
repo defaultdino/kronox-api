@@ -29,7 +29,9 @@ func (s *ProgrammeService) GetProgrammes(ctx context.Context, school string, sea
 		"intervallAntal": "6",
 	}
 
-	response, err := s.app.KronoxClient.SendRequest(ctx, http.MethodGet, endpoint, params)
+	client := s.app.NewKronoxClient()
+
+	response, err := client.SendRequest(ctx, http.MethodGet, endpoint, params)
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch programmes: %w", err)
 	}

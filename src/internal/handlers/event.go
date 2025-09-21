@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,6 +36,15 @@ func NewEventHandler(eventService *services.EventService, parserService parsers.
 // @Router       /events [get]
 func (h *EventHandler) GetUserEvents(c *gin.Context) {
 	sessionID, exists := middleware.GetSessionID(c)
+
+	fmt.Fprintf(gin.DefaultWriter, "Handler: SessionManager has %d total sessions\n", h.eventService.GetSessionManager().GetSessionCount())
+
+	if session, exists := h.eventService.GetSessionManager().GetSession(sessionID); exists {
+		fmt.Fprintf(gin.DefaultWriter, "Handler: Found session for user: %s, school: %s\n", session.Username, session.SchoolURL)
+	} else {
+		fmt.Fprintf(gin.DefaultWriter, "Handler: Session %s NOT FOUND in manager\n", sessionID)
+	}
+
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "session required"})
 		return

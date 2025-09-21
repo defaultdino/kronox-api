@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tumble-for-kronox/kronox-api/internal/app"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
 	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
@@ -14,28 +15,37 @@ import (
 
 type EventService struct {
 	app            *app.App
-	sessionService *SessionService
 	parserService  parsers.ParserService
+	sessionManager *SessionManager
 }
 
-func NewEventService(app *app.App, sessionService *SessionService, parserService parsers.ParserService) *EventService {
+func NewEventService(app *app.App, parserService parsers.ParserService, sessionManager *SessionManager) *EventService {
 	return &EventService{
 		app:            app,
-		sessionService: sessionService,
 		parserService:  parserService,
+		sessionManager: sessionManager,
 	}
 }
 
-func (s *EventService) GetUserEvents(ctx context.Context, schoolUrl, sessionID string) (*user.EventsResponse, error) {
-	ctx = context.WithValue(ctx, sessionIDKey, sessionID)
+func (s *EventService) GetSessionManager() *SessionManager {
+	return s.sessionManager
+}
 
-	if err := s.sessionService.SetSessionLanguage(ctx, schoolUrl, sessionID); err != nil {
+func (s *EventService) GetUserEvents(ctx context.Context, schoolUrl, sessionID string) (*user.EventsResponse, error) {
+	userSession, exists := s.sessionManager.GetSession(sessionID)
+	if !exists {
+		return nil, fmt.Errorf("session not found or expired")
+	}
+
+	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Failed to set session language: %v\n", err)
 		return nil, fmt.Errorf("failed to set session language: %w", err)
 	}
 
 	endpoint := fmt.Sprintf("%s/aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))
 
-	response, err := s.app.KronoxClient.SendRequest(ctx, http.MethodGet, endpoint, map[string]string{})
+	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
+	response, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, map[string]string{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user events: %w", err)
 	}
@@ -51,13 +61,14 @@ func (s *EventService) GetUserEvents(ctx context.Context, schoolUrl, sessionID s
 		return nil, fmt.Errorf("received empty response from user events endpoint")
 	}
 
-	if strings.Contains(strings.ToLower(htmlContent), "användarnamn:") &&
-		strings.Contains(strings.ToLower(htmlContent), "lösenord:") {
+	htmlLower := strings.ToLower(htmlContent)
+
+	if strings.Contains(htmlLower, `<form id="loginform">`) {
+		s.sessionManager.RemoveSession(sessionID)
 		return nil, fmt.Errorf("session expired - redirected to login page")
 	}
 
 	events, err := s.parserService.ParseUserEvents(htmlContent)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse events: %w", err)
 	}
@@ -66,9 +77,12 @@ func (s *EventService) GetUserEvents(ctx context.Context, schoolUrl, sessionID s
 }
 
 func (s *EventService) RegisterUserEvent(ctx context.Context, schoolUrl, sessionID, userEventID string) error {
-	ctx = context.WithValue(ctx, sessionIDKey, sessionID)
+	userSession, exists := s.sessionManager.GetSession(sessionID)
+	if !exists {
+		return fmt.Errorf("session not found or expired")
+	}
 
-	if err := s.sessionService.SetSessionLanguage(ctx, schoolUrl, sessionID); err != nil {
+	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
 		return fmt.Errorf("failed to set session language: %w", err)
 	}
 
@@ -79,7 +93,8 @@ func (s *EventService) RegisterUserEvent(ctx context.Context, schoolUrl, session
 		"ort":                    "",
 	}
 
-	response, err := s.app.KronoxClient.SendRequest(ctx, http.MethodGet, endpoint, params)
+	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
+	response, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, params)
 	if err != nil {
 		return fmt.Errorf("failed to register for event: %w", err)
 	}
@@ -93,9 +108,12 @@ func (s *EventService) RegisterUserEvent(ctx context.Context, schoolUrl, session
 }
 
 func (s *EventService) UnregisterUserEvent(ctx context.Context, schoolUrl, sessionID, userEventID string) error {
-	ctx = context.WithValue(ctx, sessionIDKey, sessionID)
+	userSession, exists := s.sessionManager.GetSession(sessionID)
+	if !exists {
+		return fmt.Errorf("session not found or expired")
+	}
 
-	if err := s.sessionService.SetSessionLanguage(ctx, schoolUrl, sessionID); err != nil {
+	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
 		return fmt.Errorf("failed to set session language: %w", err)
 	}
 
@@ -105,7 +123,8 @@ func (s *EventService) UnregisterUserEvent(ctx context.Context, schoolUrl, sessi
 		"deltagarMojlighetsId": userEventID,
 	}
 
-	response, err := s.app.KronoxClient.SendRequest(ctx, http.MethodGet, endpoint, params)
+	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
+	response, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, params)
 	if err != nil {
 		return fmt.Errorf("failed to unregister from event: %w", err)
 	}
@@ -119,9 +138,12 @@ func (s *EventService) UnregisterUserEvent(ctx context.Context, schoolUrl, sessi
 }
 
 func (s *EventService) AddEventSupport(ctx context.Context, schoolUrl, sessionID, participatorID, supportID string) error {
-	ctx = context.WithValue(ctx, sessionIDKey, sessionID)
+	userSession, exists := s.sessionManager.GetSession(sessionID)
+	if !exists {
+		return fmt.Errorf("session not found or expired")
+	}
 
-	if err := s.sessionService.SetSessionLanguage(ctx, schoolUrl, sessionID); err != nil {
+	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
 		return fmt.Errorf("failed to set session language: %w", err)
 	}
 
@@ -132,7 +154,8 @@ func (s *EventService) AddEventSupport(ctx context.Context, schoolUrl, sessionID
 		"deltagarId": participatorID,
 	}
 
-	response, err := s.app.KronoxClient.SendRequest(ctx, http.MethodGet, endpoint, params)
+	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
+	response, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, params)
 	if err != nil {
 		return fmt.Errorf("failed to add event support: %w", err)
 	}
@@ -146,9 +169,12 @@ func (s *EventService) AddEventSupport(ctx context.Context, schoolUrl, sessionID
 }
 
 func (s *EventService) RemoveEventSupport(ctx context.Context, schoolUrl, sessionID, userEventID, participatorID, supportID string) error {
-	ctx = context.WithValue(ctx, sessionIDKey, sessionID)
+	userSession, exists := s.sessionManager.GetSession(sessionID)
+	if !exists {
+		return fmt.Errorf("session not found or expired")
+	}
 
-	if err := s.sessionService.SetSessionLanguage(ctx, schoolUrl, sessionID); err != nil {
+	if err := s.sessionManager.SetSessionLanguage(ctx, sessionID, schoolUrl); err != nil {
 		return fmt.Errorf("failed to set session language: %w", err)
 	}
 
@@ -160,7 +186,8 @@ func (s *EventService) RemoveEventSupport(ctx context.Context, schoolUrl, sessio
 		"deltagarId":             participatorID,
 	}
 
-	response, err := s.app.KronoxClient.SendRequest(ctx, http.MethodGet, endpoint, params)
+	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
+	response, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, params)
 	if err != nil {
 		return fmt.Errorf("failed to remove event support: %w", err)
 	}

@@ -8,17 +8,15 @@ import (
 )
 
 type App struct {
-	KronoxClient kronox.Client
 }
 
 func NewApp() (*App, error) {
+	return &App{}, nil
+}
+
+func (a *App) NewKronoxClient() kronox.Client {
 	httpClient := &http.Client{
-		Timeout: (30 * time.Second),
+		Timeout: 30 * time.Second,
 	}
-
-	kronoxClient := kronox.NewClient(httpClient)
-
-	return &App{
-		KronoxClient: kronoxClient,
-	}, nil
+	return kronox.NewClient(httpClient)
 }

@@ -233,7 +233,8 @@ func (h *ResourceHandler) GetBookings(c *gin.Context) {
 	}
 
 	bookings, err := AttemptOverSchoolURLs(c, func(url string) ([]*booking.Booking, error) {
-		return h.resourceService.GetBookedResources(c.Request.Context(), url, sessionID)
+		result, err := h.resourceService.GetBookedResources(c.Request.Context(), url, sessionID)
+		return result, err
 	})
 
 	if err != nil {

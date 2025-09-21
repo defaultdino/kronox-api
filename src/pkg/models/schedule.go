@@ -5,7 +5,7 @@ import (
 )
 
 type Event struct {
-	ID           string      `json:"id" bson:"id"`
+	ID           string      `json:"id" bson:"event_id"`
 	ScheduleID   string      `json:"schedule_id" bson:"schedule_id"`
 	Title        string      `json:"title" bson:"title"`
 	CourseID     string      `json:"course_id" bson:"course_id"`
@@ -18,9 +18,18 @@ type Event struct {
 	IsSpecial    bool        `json:"is_special" bson:"is_special"`
 }
 
+func (e *Event) Normalize() {
+	if e.Teachers == nil {
+		e.Teachers = []*Teacher{}
+	}
+	if e.Locations == nil {
+		e.Locations = []*Location{}
+	}
+}
+
 type Teacher struct {
 	ID        string `json:"id" bson:"id"`
-	FirstName string `json:"first_name" bson:"firstname"`
+	FirstName string `json:"first_name" bson:"first_name"`
 	LastName  string `json:"last_name" bson:"last_name"`
 }
 
