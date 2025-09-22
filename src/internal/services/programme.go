@@ -18,8 +18,8 @@ func NewProgrammeService(app *app.App) *ProgrammeService {
 	return &ProgrammeService{app: app}
 }
 
-func (s *ProgrammeService) GetProgrammes(ctx context.Context, school string, searchQuery string) (string, error) {
-	endpoint := fmt.Sprintf("%s/ajax/ajax_sokResurser.jsp", strings.TrimSuffix(school, "/"))
+func (s *ProgrammeService) GetProgrammes(ctx context.Context, schoolUrl string, searchQuery string) (string, error) {
+	endpoint := fmt.Sprintf("%s/ajax/ajax_sokResurser.jsp", strings.TrimSuffix(schoolUrl, "/"))
 
 	params := map[string]string{
 		"sokord":         searchQuery,

@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"github.com/tumble-for-kronox/kronox-api/internal/app"
 	"github.com/tumble-for-kronox/kronox-api/internal/clients/kronox"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
@@ -39,7 +38,7 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 		url.QueryEscape(username),
 		url.QueryEscape(password))
 
-	resp, err := client.SendRequestWithBody(ctx, http.MethodPost, endpoint, map[string]string{}, postData)
+	resp, err := client.SendRequestWithFormData(ctx, http.MethodPost, endpoint, map[string]string{}, postData)
 	if err != nil {
 		return nil, fmt.Errorf("login request failed: %w", err)
 	}
@@ -61,14 +60,8 @@ func (s *AuthService) Login(ctx context.Context, username, password, schoolUrl s
 
 	userSession := s.sessionManager.CreateSession(sessionID, username, schoolUrl)
 
-	fmt.Fprintf(gin.DefaultWriter, "Login: Created session with ID: %s for user: %s\n", sessionID, username)
-	fmt.Fprintf(gin.DefaultWriter, "Login: Session manager now has %d sessions\n", s.sessionManager.GetSessionCount())
-
 	if err := s.copyAuthenticationState(client, userSession.Client, schoolUrl); err != nil {
-		fmt.Fprintf(gin.DefaultWriter, "Login: Failed to copy auth state: %v\n", err)
 		return nil, fmt.Errorf("failed to copy authentication state: %w", err)
-	} else {
-		fmt.Fprintf(gin.DefaultWriter, "Login: Successfully copied authentication state\n")
 	}
 
 	if resp.StatusCode == http.StatusFound {

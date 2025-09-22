@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tumble-for-kronox/kronox-api/internal/app"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
 	booking "github.com/tumble-for-kronox/kronox-api/pkg/models/resource"
@@ -29,9 +30,14 @@ func NewResourceService(app *app.App, sessionManager *SessionManager, parserServ
 }
 
 func (s *ResourceService) GetResources(ctx context.Context, schoolUrl string, sessionID string) ([]*booking.Resource, error) {
-	_, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
 	if err != nil {
 		return nil, err
+	}
+
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
 	}
 
 	resourcesHTML, err := s.getResourcesHTML(ctx, schoolUrl, sessionID)
@@ -48,9 +54,14 @@ func (s *ResourceService) GetResources(ctx context.Context, schoolUrl string, se
 }
 
 func (s *ResourceService) GetBookedResources(ctx context.Context, schoolUrl string, sessionID string) ([]*booking.Booking, error) {
-	_, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
 	if err != nil {
 		return nil, err
+	}
+
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
 	}
 
 	resourcesHTML, err := s.getResourcesHTML(ctx, schoolUrl, sessionID)
@@ -84,9 +95,14 @@ func (s *ResourceService) GetBookedResources(ctx context.Context, schoolUrl stri
 }
 
 func (s *ResourceService) GetActiveResourceBookings(ctx context.Context, schoolUrl, sessionID, resourceID string) ([]*booking.Booking, error) {
-	_, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
+	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
 	if err != nil {
 		return nil, err
+	}
+
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
 	}
 
 	bookingsHTML, err := s.getActiveResourceBookings(ctx, schoolUrl, sessionID, resourceID)
@@ -115,6 +131,11 @@ func (s *ResourceService) BookResource(ctx context.Context, schoolUrl, sessionID
 	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
 	if err != nil {
 		return err
+	}
+
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
 	}
 
 	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
@@ -156,6 +177,11 @@ func (s *ResourceService) UnbookResource(ctx context.Context, schoolUrl, session
 	}
 	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
 
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
+	}
+
 	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	params := map[string]string{
 		"op":         "avboka",
@@ -189,6 +215,11 @@ func (s *ResourceService) ConfirmBooking(ctx context.Context, schoolUrl, session
 
 	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
 
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
+	}
+
 	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	params := map[string]string{
 		"op":         "konfirmera",
@@ -209,6 +240,11 @@ func (s *ResourceService) getResourcesHTML(ctx context.Context, schoolUrl string
 	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
 	if err != nil {
 		return "", err
+	}
+
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
 	}
 
 	endpoint := fmt.Sprintf("%s/resursbokning.jsp", strings.TrimSuffix(schoolUrl, "/"))
@@ -245,6 +281,11 @@ func (s *ResourceService) getActiveResourceBookings(ctx context.Context, schoolU
 		return "", err
 	}
 
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
+	}
+
 	date := time.Now()
 	endpoint := fmt.Sprintf("%s/minaresursbokningar.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	params := map[string]string{
@@ -271,6 +312,11 @@ func (s *ResourceService) getAvailableResourcesHTML(ctx context.Context, schoolU
 	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
 	if err != nil {
 		return "", err
+	}
+
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
 	}
 
 	endpoint := fmt.Sprintf("%s/ajax/ajax_resursbokning.jsp", strings.TrimSuffix(schoolUrl, "/"))

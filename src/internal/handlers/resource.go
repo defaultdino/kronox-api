@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -260,7 +259,6 @@ func (h *ResourceHandler) GetBookings(c *gin.Context) {
 
 	if err != nil {
 		if services.IsAuthError(err) {
-			log.Print("Received error right here")
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

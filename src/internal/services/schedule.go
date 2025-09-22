@@ -19,24 +19,19 @@ func NewScheduleService(app *app.App) *ScheduleService {
 	return &ScheduleService{app: app}
 }
 
-func (s *ScheduleService) GetScheduleEvents(ctx context.Context, school string, scheduleIDs []string, language *string, startDate *time.Time) (string, error) {
+func (s *ScheduleService) GetScheduleEvents(ctx context.Context, schoolUrl string, scheduleIDs []string, startDate *time.Time) (string, error) {
 	parsedDate := "idag"
 	if startDate != nil {
 		parsedDate = startDate.Format("2006-01-02")
 	}
 
-	parsedLang := "SV"
-	if language != nil {
-		parsedLang = *language
-	}
-
-	endpoint := fmt.Sprintf("%s/setup/jsp/SchemaXML.jsp", strings.TrimSuffix(school, "/"))
+	endpoint := fmt.Sprintf("%s/setup/jsp/SchemaXML.jsp", strings.TrimSuffix(schoolUrl, "/"))
 
 	params := map[string]string{
 		"startDatum":     parsedDate,
 		"intervallTyp":   "m",
 		"intervallAntal": "6", // 6 months ahead (maximum)
-		"sprak":          parsedLang,
+		"sprak":          "EN",
 		"sokMedAND":      "false",
 		"forklaringar":   "true",
 		"resurser":       strings.Join(scheduleIDs, ","),

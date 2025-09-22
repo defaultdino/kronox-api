@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tumble-for-kronox/kronox-api/internal/app"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
 	"github.com/tumble-for-kronox/kronox-api/pkg/models/user"
@@ -37,6 +38,10 @@ func (s *EventService) GetUserEvents(ctx context.Context, schoolUrl, sessionID s
 	}
 
 	endpoint := fmt.Sprintf("%s/aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))
+
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
+	}
 
 	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
 	response, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, map[string]string{})
@@ -76,6 +81,11 @@ func (s *EventService) RegisterUserEvent(ctx context.Context, schoolUrl, session
 		return err
 	}
 
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
+	}
+
 	endpoint := fmt.Sprintf("%s/ajax/ajax_aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	params := map[string]string{
 		"op":                     "anmal",
@@ -101,6 +111,11 @@ func (s *EventService) UnregisterUserEvent(ctx context.Context, schoolUrl, sessi
 	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
 	if err != nil {
 		return err
+	}
+
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
 	}
 
 	endpoint := fmt.Sprintf("%s/ajax/ajax_aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))
@@ -129,6 +144,10 @@ func (s *EventService) AddEventSupport(ctx context.Context, schoolUrl, sessionID
 		return err
 	}
 
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
+	}
 	endpoint := fmt.Sprintf("%s/ajax/ajax_aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	params := map[string]string{
 		"op":         "laggTillStod",
@@ -154,6 +173,11 @@ func (s *EventService) RemoveEventSupport(ctx context.Context, schoolUrl, sessio
 	userSession, err := s.sessionManager.ValidateAndPrepareSession(ctx, sessionID, schoolUrl)
 	if err != nil {
 		return err
+	}
+
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
 	}
 
 	endpoint := fmt.Sprintf("%s/ajax/ajax_aktivitetsanmalan.jsp", strings.TrimSuffix(schoolUrl, "/"))

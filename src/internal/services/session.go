@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -133,46 +132,61 @@ func (sm *SessionManager) ValidateSession(ctx context.Context, sessionID, school
 	return isAuthenticated, nil
 }
 
-func (sm *SessionManager) setSessionLanguage(ctx context.Context, sessionID, schoolURL string) error {
-	userSession, exists := sm.GetSession(sessionID)
-	if !exists {
-		return ErrSessionNotFound
-	}
-
+func SetLanguageForClient(ctx context.Context, client kronox.Client, schoolURL string) error {
 	endpoint := fmt.Sprintf("%s/ajax/ajax_lang.jsp", strings.TrimSuffix(schoolURL, "/"))
 	params := map[string]string{
 		"lang": "EN",
 	}
 
-	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
-	response, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, params)
+	response, err := client.SendRequest(ctx, http.MethodGet, endpoint, params)
 	if err != nil {
-		// Network error - don't remove session, could be temporary
-		return fmt.Errorf("failed to set session language: %w", err)
+		return fmt.Errorf("failed to set language: %w", err)
 	}
 	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusOK {
-		// Session is expired/invalid - remove it and return auth error
-		fmt.Fprintf(gin.DefaultWriter, "SetSessionLanguage: Session %s expired (status %d), removing from manager\n", sessionID, response.StatusCode)
-		sm.RemoveSession(sessionID)
-		return ErrSessionExpired
-	}
 
 	return nil
 }
 
-func (sm *SessionManager) ValidateAndPrepareSession(ctx context.Context, sessionID, schoolURL string) (*UserSession, error) {
+func (sm *SessionManager) ValidateAndPrepareSession(ctx context.Context, sessionID, schoolUrl string) (*UserSession, error) {
 	userSession, exists := sm.GetSession(sessionID)
 	if !exists {
 		return nil, ErrSessionNotFound
 	}
 
-	if err := sm.setSessionLanguage(ctx, sessionID, schoolURL); err != nil {
-		if errors.Is(err, ErrSessionExpired) {
-			return nil, ErrSessionExpired
-		}
-		return nil, err
+	endpoint := fmt.Sprintf("%s/start.jsp", strings.TrimSuffix(schoolUrl, "/"))
+	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
+
+	// Set language on the user's client (best effort)
+	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
+		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
+	}
+
+	response, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, map[string]string{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate session: %w", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		sm.RemoveSession(sessionID)
+		return nil, ErrSessionExpired
+	}
+
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read validation response: %w", err)
+	}
+
+	htmlContent := string(body)
+	htmlLower := strings.ToLower(htmlContent)
+
+	// Check for "Logged in as" or "Inloggad som:" which indicates successful authentication
+	isAuthenticated := strings.Contains(htmlLower, "logged in as:") ||
+		strings.Contains(htmlLower, "inloggad som:")
+
+	if !isAuthenticated {
+		sm.RemoveSession(sessionID)
+		return nil, ErrSessionExpired
 	}
 
 	return userSession, nil

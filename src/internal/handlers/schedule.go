@@ -30,7 +30,6 @@ func NewScheduleHandler(scheduleService *services.ScheduleService, parserService
 // @Accept       json
 // @Produce      json
 // @Param        schedule_ids  query     string  true   "Comma-separated list of schedule IDs"  example("schedule1,schedule2,schedule3")
-// @Param        language      query     string  false  "Language preference for the schedule"  example("en")
 // @Param        start_date    query     string  false  "Start date for filtering events (YYYY-MM-DD format)"  example("2024-01-15") format(date)
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Success      200          {object}  ScheduleEventsResponse  "List of schedule events"
@@ -50,11 +49,6 @@ func (h *ScheduleHandler) GetScheduleEvents(c *gin.Context) {
 		scheduleIDs[i] = url.QueryEscape(id)
 	}
 
-	var language *string
-	if lang := c.Query("language"); lang != "" {
-		language = &lang
-	}
-
 	var startDate *time.Time
 	if dateStr := c.Query("start_date"); dateStr != "" {
 		if parsed, err := time.Parse("2006-01-02", dateStr); err == nil {
@@ -66,7 +60,7 @@ func (h *ScheduleHandler) GetScheduleEvents(c *gin.Context) {
 	}
 
 	scheduleXML, err := AttemptOverSchoolURLs(c, func(url string) (string, error) {
-		return h.scheduleService.GetScheduleEvents(c.Request.Context(), url, scheduleIDs, language, startDate)
+		return h.scheduleService.GetScheduleEvents(c.Request.Context(), url, scheduleIDs, startDate)
 	})
 
 	if err != nil {
