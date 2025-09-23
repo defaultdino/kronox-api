@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,13 +23,15 @@ func NewEventHandler(eventService *services.EventService, parserService parsers.
 
 // GetUserEvents godoc
 // @Summary      Get user events
-// @Description  Retrieve all events for the authenticated user across multiple school URLs
+// @Description  Retrieve all events for the authenticated user using specified school URL
 // @Tags         events
 // @Accept       json
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
 // @Success      200           {object}  EventsListResponse  "List of user events"
+// @Failure      400           {object}  ErrorResponse       "Invalid url_index parameter"
 // @Failure      401           {object}  ErrorResponse       "Session required"
 // @Failure      500           {object}  ErrorResponse       "Internal server error"
 // @Security     BearerAuth
@@ -41,9 +44,14 @@ func (h *EventHandler) GetUserEvents(c *gin.Context) {
 		return
 	}
 
-	events, err := AttemptOverSchoolURLs(c, func(url string) (*user.EventsResponse, error) {
-		return h.eventService.GetUserEvents(c.Request.Context(), url, sessionID)
-	})
+	schoolURL, err := GetSchoolURLFromIndex(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := context.Background()
+	events, err := h.eventService.GetUserEvents(ctx, schoolURL, sessionID)
 
 	if err != nil {
 		if services.IsAuthError(err) {
@@ -66,8 +74,9 @@ func (h *EventHandler) GetUserEvents(c *gin.Context) {
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        eventId        path      string  true  "Event ID to register for"
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
 // @Success      200           {object}  SuccessResponse  "Successfully registered for event"
-// @Failure      400           {object}  ErrorResponse    "eventId path parameter required"
+// @Failure      400           {object}  ErrorResponse    "eventId path parameter required or invalid url_index"
 // @Failure      401           {object}  ErrorResponse    "Session required"
 // @Failure      500           {object}  ErrorResponse    "Internal server error"
 // @Security     BearerAuth
@@ -85,7 +94,7 @@ func (h *EventHandler) RegisterUserEvent(c *gin.Context) {
 		return
 	}
 
-	err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := ExecuteWithSchoolURL(c, func(url string) error {
 		return h.eventService.RegisterUserEvent(c.Request.Context(), url, sessionID, userEventID)
 	})
 
@@ -129,7 +138,7 @@ func (h *EventHandler) UnregisterUserEvent(c *gin.Context) {
 		return
 	}
 
-	err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := ExecuteWithSchoolURL(c, func(url string) error {
 		return h.eventService.UnregisterUserEvent(c.Request.Context(), url, sessionID, userEventID)
 	})
 
@@ -180,7 +189,7 @@ func (h *EventHandler) AddEventSupport(c *gin.Context) {
 		return
 	}
 
-	err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := ExecuteWithSchoolURL(c, func(url string) error {
 		return h.eventService.AddEventSupport(c.Request.Context(), url, sessionID, participatorID, supportID)
 	})
 
@@ -238,7 +247,7 @@ func (h *EventHandler) RemoveEventSupport(c *gin.Context) {
 		return
 	}
 
-	err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := ExecuteWithSchoolURL(c, func(url string) error {
 		return h.eventService.RemoveEventSupport(c.Request.Context(), url, sessionID, userEventID, participatorID, supportID)
 	})
 

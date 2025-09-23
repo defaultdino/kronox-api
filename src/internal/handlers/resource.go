@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -28,7 +29,9 @@ func NewResourceHandler(resourceService *services.ResourceService) *ResourceHand
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
 // @Success      200           {object}  ResourcesListResponse  "List of available resources"
+// @Failure      400           {object}  ErrorResponse          "Invalid url_index parameter"
 // @Failure      401           {object}  ErrorResponse          "Session required"
 // @Failure      500           {object}  ErrorResponse          "Internal server error"
 // @Security     BearerAuth
@@ -41,9 +44,14 @@ func (h *ResourceHandler) GetAllResources(c *gin.Context) {
 		return
 	}
 
-	resources, err := AttemptOverSchoolURLs(c, func(url string) ([]*booking.Resource, error) {
-		return h.resourceService.GetResources(c.Request.Context(), url, sessionID)
-	})
+	schoolURL, err := GetSchoolURLFromIndex(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := context.Background()
+	resources, err := h.resourceService.GetResources(ctx, schoolURL, sessionID)
 
 	if err != nil {
 		if services.IsAuthError(err) {
@@ -66,8 +74,9 @@ func (h *ResourceHandler) GetAllResources(c *gin.Context) {
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        resourceId     path      string  true  "Resource ID to get bookings for"
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
 // @Success      200           {object}  BookingsListResponse  "List of active bookings for the resource"
-// @Failure      400           {object}  ErrorResponse         "resourceId path parameter required"
+// @Failure      400           {object}  ErrorResponse         "resourceId path parameter required or invalid url_index"
 // @Failure      401           {object}  ErrorResponse         "Session required"
 // @Failure      500           {object}  ErrorResponse         "Internal server error"
 // @Security     BearerAuth
@@ -86,9 +95,14 @@ func (h *ResourceHandler) GetActiveBookingsForResource(c *gin.Context) {
 		return
 	}
 
-	bookings, err := AttemptOverSchoolURLs(c, func(url string) ([]*booking.Booking, error) {
-		return h.resourceService.GetActiveResourceBookings(c.Request.Context(), url, sessionID, resourceID)
-	})
+	schoolURL, err := GetSchoolURLFromIndex(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := context.Background()
+	bookings, err := h.resourceService.GetActiveResourceBookings(ctx, schoolURL, sessionID, resourceID)
 
 	if err != nil {
 		if services.IsAuthError(err) {
@@ -112,8 +126,9 @@ func (h *ResourceHandler) GetActiveBookingsForResource(c *gin.Context) {
 // @Param        resource_id    path     string  true  "Resource ID to check availability for"
 // @Param        date          	query     string  true  "Date in YYYY-MM-DD format"  Format(date)
 // @Param        school    			query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
 // @Success      200           {object}  AvailabilityResponse  "Available time slots for the resource"
-// @Failure      400           {object}  ErrorResponse         "resource_id and date are required"
+// @Failure      400           {object}  ErrorResponse         "resource_id and date are required or invalid url_index"
 // @Failure      401           {object}  ErrorResponse         "Session required"
 // @Failure      500           {object}  ErrorResponse         "Internal server error"
 // @Security     BearerAuth
@@ -143,9 +158,14 @@ func (h *ResourceHandler) GetResourceAvailability(c *gin.Context) {
 		return
 	}
 
-	availability, err := AttemptOverSchoolURLs(c, func(url string) ([]*booking.AvailabilitySlot, error) {
-		return h.resourceService.GetAvailableResources(c.Request.Context(), url, sessionID, date, resourceID)
-	})
+	schoolURL, err := GetSchoolURLFromIndex(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := context.Background()
+	availability, err := h.resourceService.GetAvailableResources(ctx, schoolURL, sessionID, date, resourceID)
 
 	if err != nil {
 		if services.IsAuthError(err) {
@@ -169,8 +189,9 @@ func (h *ResourceHandler) GetResourceAvailability(c *gin.Context) {
 // @Param        resourceId     path                      string                   true  "Resource ID to book"
 // @Param        booking        body                      booking.BookingRequest   true  "Booking details"
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
 // @Success      200           {object}                  SuccessResponse          "Booking successful"
-// @Failure      400           {object}                  ErrorResponse            "Invalid request data"
+// @Failure      400           {object}                  ErrorResponse            "Invalid request data or url_index"
 // @Failure      401           {object}                  ErrorResponse            "Session required"
 // @Failure      500           {object}                  ErrorResponse            "Internal server error"
 // @Security     BearerAuth
@@ -215,11 +236,16 @@ func (h *ResourceHandler) BookResource(c *gin.Context) {
 		return
 	}
 
-	err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := ExecuteWithSchoolURL(c, func(url string) error {
 		return h.resourceService.BookResource(c.Request.Context(), url, sessionID, &req, resourceId)
 	})
 
 	if err != nil {
+		if err.Error() == "url_index query parameter is required" || err.Error() == "url_index must be a valid integer" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
 		if services.IsAuthError(err) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		} else {
@@ -239,7 +265,9 @@ func (h *ResourceHandler) BookResource(c *gin.Context) {
 // @Produce      json
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
 // @Success      200           {object}  BookingsListResponse  "List of user bookings"
+// @Failure      400           {object}  ErrorResponse         "Invalid url_index parameter"
 // @Failure      401           {object}  ErrorResponse         "Session required"
 // @Failure      500           {object}  ErrorResponse         "Internal server error"
 // @Security     BearerAuth
@@ -252,10 +280,14 @@ func (h *ResourceHandler) GetBookings(c *gin.Context) {
 		return
 	}
 
-	bookings, err := AttemptOverSchoolURLs(c, func(url string) ([]*booking.Booking, error) {
-		result, err := h.resourceService.GetBookedResources(c.Request.Context(), url, sessionID)
-		return result, err
-	})
+	schoolURL, err := GetSchoolURLFromIndex(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := context.Background()
+	bookings, err := h.resourceService.GetBookedResources(ctx, schoolURL, sessionID)
 
 	if err != nil {
 		if services.IsAuthError(err) {
@@ -264,6 +296,10 @@ func (h *ResourceHandler) GetBookings(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 		return
+	}
+
+	if bookings == nil {
+		bookings = []*booking.Booking{}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"bookings": bookings})
@@ -278,8 +314,9 @@ func (h *ResourceHandler) GetBookings(c *gin.Context) {
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        bookingId      path      string  true  "Booking ID to cancel"
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
 // @Success      200           {object}  SuccessResponse  "Booking cancelled successfully"
-// @Failure      400           {object}  ErrorResponse    "bookingId is required"
+// @Failure      400           {object}  ErrorResponse    "bookingId is required or invalid url_index"
 // @Failure      401           {object}  ErrorResponse    "Session required"
 // @Failure      500           {object}  ErrorResponse    "Internal server error"
 // @Security     BearerAuth
@@ -298,11 +335,17 @@ func (h *ResourceHandler) UnbookResource(c *gin.Context) {
 		return
 	}
 
-	err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := ExecuteWithSchoolURL(c, func(url string) error {
 		return h.resourceService.UnbookResource(c.Request.Context(), url, sessionID, bookingId)
 	})
 
 	if err != nil {
+		// Check if it's a url_index error first
+		if err.Error() == "url_index query parameter is required" || err.Error() == "url_index must be a valid integer" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
 		if services.IsAuthError(err) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		} else {
@@ -324,8 +367,9 @@ func (h *ResourceHandler) UnbookResource(c *gin.Context) {
 // @Param        bookingId      path                           string                          true  "Booking ID to confirm"
 // @Param        confirmation   body                           booking.ConfirmBookingRequest   true  "Confirmation details"
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
 // @Success      200           {object}                       SuccessResponse                 "Booking confirmed successfully"
-// @Failure      400           {object}                       ErrorResponse                   "Invalid request data"
+// @Failure      400           {object}                       ErrorResponse                   "Invalid request data or url_index"
 // @Failure      401           {object}                       ErrorResponse                   "Session required"
 // @Failure      500           {object}                       ErrorResponse                   "Internal server error"
 // @Security     BearerAuth
@@ -355,11 +399,17 @@ func (h *ResourceHandler) ConfirmResourceBooking(c *gin.Context) {
 		return
 	}
 
-	err := AttemptOverSchoolURLsBool(c, func(url string) error {
+	err := ExecuteWithSchoolURL(c, func(url string) error {
 		return h.resourceService.ConfirmBooking(c.Request.Context(), url, sessionID, bookingId, req.ResourceID)
 	})
 
 	if err != nil {
+		// Check if it's a url_index error first
+		if err.Error() == "url_index query parameter is required" || err.Error() == "url_index must be a valid integer" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
 		if services.IsAuthError(err) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		} else {

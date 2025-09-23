@@ -156,11 +156,6 @@ func (sm *SessionManager) ValidateAndPrepareSession(ctx context.Context, session
 	endpoint := fmt.Sprintf("%s/start.jsp", strings.TrimSuffix(schoolUrl, "/"))
 	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
 
-	// Set language on the user's client (best effort)
-	if err := SetLanguageForClient(ctx, userSession.Client, schoolUrl); err != nil {
-		fmt.Fprintf(gin.DefaultWriter, "Warning: Failed to set language: %v\n", err)
-	}
-
 	response, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, map[string]string{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate session: %w", err)

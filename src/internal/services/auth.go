@@ -131,3 +131,37 @@ func (s *AuthService) Logout(sessionID string) error {
 func (s *AuthService) copyAuthenticationState(loginClient, sessionClient kronox.Client, schoolUrl string) error {
 	return sessionClient.CopyCookiesFrom(loginClient, schoolUrl)
 }
+
+func (s *AuthService) PollSession(ctx context.Context, sessionID, schoolUrl string) (string, error) {
+	userSession, exists := s.sessionManager.GetSession(sessionID)
+	if !exists {
+		return "SESSIONSFEL", fmt.Errorf("session not found")
+	}
+
+	endpoint := fmt.Sprintf("%s/ajax/ajax_session.jsp", strings.TrimSuffix(schoolUrl, "/"))
+
+	ctxWithSession := context.WithValue(ctx, sessionIDKey, sessionID)
+	resp, err := userSession.Client.SendRequest(ctxWithSession, http.MethodGet, endpoint, map[string]string{
+		"op": "poll",
+	})
+	if err != nil {
+		return "ERROR", fmt.Errorf("poll request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "ERROR", fmt.Errorf("failed to read response: %w", err)
+	}
+
+	response := strings.TrimSpace(string(body))
+
+	switch response {
+	case "OK":
+		return "OK", nil
+	case "SESSIONSFEL", "ERROR":
+		return response, fmt.Errorf("session invalid: %s", response)
+	}
+
+	return "ERROR", fmt.Errorf("unexpected response: %s", response)
+}

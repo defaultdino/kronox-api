@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,11 +27,12 @@ func NewProgrammeHandler(programmeService *services.ProgrammeService, parserServ
 // @Tags         programmes
 // @Accept       json
 // @Produce      json
-// @Param        q    query     string  true  "Search query for programmes"  example("Computer Science")
-// @Param        school    query     string  true  "School that request pertains to"  example("hkr")
-// @Success      200  {object}  ProgrammesResponse  "List of programmes matching the search query"
-// @Failure      400  {object}  ErrorResponse       "Search query 'q' required"
-// @Failure      500  {object}  ErrorResponse       "Failed to fetch or parse programmes"
+// @Param        q        query     string  true  "Search query for programmes"
+// @Param        school   query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
+// @Success      200     {object}  ProgrammesListResponse  "List of programmes matching search criteria"
+// @Failure      400     {object}  ErrorResponse           "Search query required or invalid url_index"
+// @Failure      500     {object}  ErrorResponse           "Failed to fetch or parse programmes"
 // @Router       /programmes [get]
 func (h *ProgrammeHandler) SearchProgrammes(c *gin.Context) {
 	searchQuery := c.Query("q")
@@ -39,11 +41,16 @@ func (h *ProgrammeHandler) SearchProgrammes(c *gin.Context) {
 		return
 	}
 
-	programmesHTML, err := AttemptOverSchoolURLs(c, func(url string) (string, error) {
-		return h.programmeService.GetProgrammes(c.Request.Context(), url, searchQuery)
-	})
+	schoolURL, err := GetSchoolURLFromIndex(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch programmes from all available URLs"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := context.Background()
+	programmesHTML, err := h.programmeService.GetProgrammes(ctx, schoolURL, searchQuery)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch programmes from specified URL"})
 		return
 	}
 

@@ -26,7 +26,7 @@ var (
 	loadOnce     sync.Once
 )
 
-func getSchoolConfig() Config {
+func GetSchoolConfig() Config {
 	loadOnce.Do(func() {
 		if err := LoadSchoolConfig("schools.toml"); err != nil {
 			panic(err)
@@ -57,7 +57,7 @@ func SchoolValidationMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		cfg := getSchoolConfig()
+		cfg := GetSchoolConfig()
 		school, exists := cfg.Schools[schoolCode]
 
 		if !exists {

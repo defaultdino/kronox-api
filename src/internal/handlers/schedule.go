@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"net/url"
 	"strings"
@@ -32,8 +33,9 @@ func NewScheduleHandler(scheduleService *services.ScheduleService, parserService
 // @Param        schedule_ids  query     string  true   "Comma-separated list of schedule IDs"  example("schedule1,schedule2,schedule3")
 // @Param        start_date    query     string  false  "Start date for filtering events (YYYY-MM-DD format)"  example("2024-01-15") format(date)
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
+// @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
 // @Success      200          {object}  ScheduleEventsResponse  "List of schedule events"
-// @Failure      400          {object}  ErrorResponse           "Missing required parameters or invalid date format"
+// @Failure      400          {object}  ErrorResponse           "Missing required parameters, invalid date format, or invalid url_index"
 // @Failure      500          {object}  ErrorResponse           "Failed to fetch or parse schedule data"
 // @Router       /schedules [get]
 func (h *ScheduleHandler) GetScheduleEvents(c *gin.Context) {
@@ -59,12 +61,17 @@ func (h *ScheduleHandler) GetScheduleEvents(c *gin.Context) {
 		}
 	}
 
-	scheduleXML, err := AttemptOverSchoolURLs(c, func(url string) (string, error) {
-		return h.scheduleService.GetScheduleEvents(c.Request.Context(), url, scheduleIDs, startDate)
-	})
+	schoolURL, err := GetSchoolURLFromIndex(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx := context.Background()
+	scheduleXML, err := h.scheduleService.GetScheduleEvents(ctx, schoolURL, scheduleIDs, startDate)
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch schedule from both schema and webbschema URLs"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch schedule from specified URL"})
 		return
 	}
 

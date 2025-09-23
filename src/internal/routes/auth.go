@@ -12,5 +12,6 @@ func SetupAuthRoutes(api *gin.RouterGroup, authHandler *handlers.AuthHandler) {
 	{
 		auth.POST("/login", authHandler.Login)
 		auth.GET("/validate", authHandler.ValidateSession)
+		auth.GET("/poll", authHandler.PollSession)
 	}
 }
