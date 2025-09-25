@@ -16,6 +16,7 @@ type Event struct {
 	Locations    []*Location `json:"locations" bson:"locations"`
 	LastModified time.Time   `json:"last_modified" bson:"last_modified"`
 	IsSpecial    bool        `json:"is_special" bson:"is_special"`
+	SchoolCode   string      `json:"school_code" bson:"school_code"`
 }
 
 func (e *Event) Normalize() {

@@ -16,7 +16,7 @@ type KronoxScheduleXML struct {
 	ExplanationRows []explanationRow `xml:"forklaringstexter>forklaringsrader"`
 }
 
-func (s *service) ParseScheduleXML(scheduleIDs []string, xmlContent string) ([]*models.Event, error) {
+func (s *service) ParseScheduleXML(schoolCode string, scheduleIDs []string, xmlContent string) ([]*models.Event, error) {
 	var scheduleXML KronoxScheduleXML
 	if err := xml.Unmarshal([]byte(xmlContent), &scheduleXML); err != nil {
 		return nil, fmt.Errorf("failed to parse XML: %w", err)
@@ -31,7 +31,7 @@ func (s *service) ParseScheduleXML(scheduleIDs []string, xmlContent string) ([]*
 	var events []*models.Event
 
 	for _, post := range scheduleXML.Posts {
-		event, err := parseEvent(scheduleIDs, post, teachers, locations, courses)
+		event, err := parseEvent(schoolCode, scheduleIDs, post, teachers, locations, courses)
 		if err != nil {
 			continue
 		}
@@ -186,7 +186,7 @@ func parseLocations(explanationRows []explanationRow) map[string]*models.Locatio
 	return locations
 }
 
-func parseEvent(scheduleIDs []string, post eventPost, teachers map[string]*models.Teacher, locations map[string]*models.Location, courses map[string]string) (*models.Event, error) {
+func parseEvent(schoolCode string, scheduleIDs []string, post eventPost, teachers map[string]*models.Teacher, locations map[string]*models.Location, courses map[string]string) (*models.Event, error) {
 	timeStart, err := time.Parse("20060102T150405Z", post.BookedDates.StartDateTime)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse start time: %w", err)
@@ -281,6 +281,7 @@ func parseEvent(scheduleIDs []string, post eventPost, teachers map[string]*model
 		Locations:    eventLocations,
 		LastModified: lastModified,
 		IsSpecial:    false,
+		SchoolCode:   schoolCode,
 	}, nil
 }
 

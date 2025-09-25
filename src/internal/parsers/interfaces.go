@@ -18,7 +18,7 @@ type ParserService interface {
 	ParseUserEvents(html string) (*user.EventsResponse, error)
 
 	// Schedule parsers
-	ParseScheduleXML(scheduleIDs []string, xmlContent string) ([]*models.Event, error)
+	ParseScheduleXML(schoolCode string, scheduleIDs []string, xmlContent string) ([]*models.Event, error)
 
 	// Programme parsers
 	ParseProgrammes(html string) ([]*models.Programme, error)

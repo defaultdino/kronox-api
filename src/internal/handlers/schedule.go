@@ -10,6 +10,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
 	"github.com/tumble-for-kronox/kronox-api/internal/services"
+	"github.com/tumble-for-kronox/kronox-api/pkg/middleware"
+	"github.com/tumble-for-kronox/kronox-api/pkg/models"
 )
 
 type ScheduleHandler struct {
@@ -75,10 +77,21 @@ func (h *ScheduleHandler) GetScheduleEvents(c *gin.Context) {
 		return
 	}
 
-	events, err := h.parserService.ParseScheduleXML(scheduleIDs, scheduleXML)
+	schoolCode := middleware.GetSchoolCode(c)
+
+	if schoolCode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "could not retrieve schoolCode"})
+		return
+	}
+
+	events, err := h.parserService.ParseScheduleXML(schoolCode, scheduleIDs, scheduleXML)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to parse schedule XML"})
 		return
+	}
+
+	if events == nil {
+		events = []*models.Event{}
 	}
 
 	c.JSON(http.StatusOK, gin.H{"events": events})
