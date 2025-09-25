@@ -282,6 +282,7 @@ func parseEvent(schoolCode string, scheduleIDs []string, post eventPost, teacher
 		LastModified: lastModified,
 		IsSpecial:    false,
 		SchoolCode:   schoolCode,
+		Color:        "#4A90E2",
 	}, nil
 }
 

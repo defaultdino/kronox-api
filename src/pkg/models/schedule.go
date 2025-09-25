@@ -17,6 +17,7 @@ type Event struct {
 	LastModified time.Time   `json:"last_modified" bson:"last_modified"`
 	IsSpecial    bool        `json:"is_special" bson:"is_special"`
 	SchoolCode   string      `json:"school_code" bson:"school_code"`
+	Color        string      `json:"color" bson:"color"` // just a default hex color value we store, user will override it client-side
 }
 
 func (e *Event) Normalize() {
