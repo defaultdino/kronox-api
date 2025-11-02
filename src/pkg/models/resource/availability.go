@@ -21,5 +21,5 @@ type AvailabilitySlot struct {
 	Availability Availability `json:"availability"`
 	LocationId   *string      `json:"location_id,omitempty"`
 	ResourceType *string      `json:"resource_type,omitempty"`
-	TimeSlotId   *string      `json:"time_slot_id,omitempty"`
+	TimeSlotId   *int      `json:"time_slot_id,omitempty"`
 }

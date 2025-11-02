@@ -22,11 +22,12 @@ func NewResourceHandler(resourceService *services.ResourceService) *ResourceHand
 }
 
 // GetAllResources godoc
-// @Summary      Get all resources
-// @Description  Retrieve all available resources for booking across multiple school URLs
+// @Summary      Get all resources with availability
+// @Description  Retrieve all available resources with their availability for a specific date
 // @Tags         resources
 // @Accept       json
 // @Produce      json
+// @Param        date          query     string  true  "Date in YYYY-MM-DD format"
 // @Param        Authorization  header    string  true  "Bearer token (session ID)"  Format(Bearer {session_id})
 // @Param        school    query     string  true  "School that request pertains to"  example("hkr")
 // @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
@@ -44,6 +45,18 @@ func (h *ResourceHandler) GetAllResources(c *gin.Context) {
 		return
 	}
 
+	dateStr := c.Query("date")
+	if dateStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "date required (YYYY-MM-DD format)"})
+		return
+	}
+
+	date, err := time.Parse("2006-01-02", dateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid date format, use YYYY-MM-DD"})
+		return
+	}
+
 	schoolURL, err := GetSchoolURLFromIndex(c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -51,7 +64,7 @@ func (h *ResourceHandler) GetAllResources(c *gin.Context) {
 	}
 
 	ctx := context.Background()
-	resources, err := h.resourceService.GetResources(ctx, schoolURL, sessionID)
+	resources, err := h.resourceService.GetResourcesWithAvailability(ctx, schoolURL, sessionID, date)
 
 	if err != nil {
 		if services.IsAuthError(err) {
@@ -231,7 +244,7 @@ func (h *ResourceHandler) BookResource(c *gin.Context) {
 		return
 	}
 
-	if req.Slot.TimeSlotId == nil || *req.Slot.TimeSlotId == "" {
+	if req.Slot.TimeSlotId == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "slot.timeSlotId is required"})
 		return
 	}

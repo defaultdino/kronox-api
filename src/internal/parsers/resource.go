@@ -3,6 +3,7 @@ package parsers
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -196,15 +197,22 @@ func parseBookingNode(s *goquery.Selection, resourceID string) (*booking.Booking
 	}, nil
 }
 
-func (s *service) ParseResourceAvailability(html string, resourceDate time.Time) ([]*booking.AvailabilitySlot, error) {
+type ResourceAvailabilityData struct {
+	TimeSlots   []*booking.TimeSlot
+	LocationIDs []string
+	Slots       map[string]map[int]*booking.AvailabilitySlot
+}
+
+func (s *service) ParseResourceAvailability(html string, resourceDate time.Time) (*ResourceAvailabilityData, error) {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(html))
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse HTML: %w", err)
 	}
 
-	var slots []*booking.AvailabilitySlot
+	data := &ResourceAvailabilityData{
+		Slots: make(map[string]map[int]*booking.AvailabilitySlot),
+	}
 
-	var timeSlots []*booking.TimeSlot
 	doc.Find("tr:first-child td b").Each(func(i int, s *goquery.Selection) {
 		timeRange := strings.TrimSpace(s.Text())
 		if timeRange == "" {
@@ -216,29 +224,26 @@ func (s *service) ParseResourceAvailability(html string, resourceDate time.Time)
 			return
 		}
 
+		id := i
 		timeSlot := &booking.TimeSlot{
-			ID:   &i,
+			ID:   &id,
 			From: parseTimeWithDate(parts[0], resourceDate),
 			To:   parseTimeWithDate(parts[1], resourceDate),
 		}
-		timeSlots = append(timeSlots, timeSlot)
-	})
-
-	var locationIDs []string
-	doc.Find("tr").Slice(1, goquery.ToEnd).Each(func(i int, s *goquery.Selection) {
-		locationID := strings.TrimSpace(s.Find("td:first-child b").Text())
-		if locationID != "" {
-			locationIDs = append(locationIDs, locationID)
-		}
+		data.TimeSlots = append(data.TimeSlots, timeSlot)
 	})
 
 	doc.Find("tr").Slice(1, goquery.ToEnd).Each(func(rowIndex int, row *goquery.Selection) {
-		if rowIndex >= len(locationIDs) {
+		locationID := strings.TrimSpace(row.Find("td:first-child b").Text())
+		if locationID == "" {
 			return
 		}
 
+		data.LocationIDs = append(data.LocationIDs, locationID)
+		data.Slots[locationID] = make(map[int]*booking.AvailabilitySlot)
+
 		row.Find("td").Slice(1, goquery.ToEnd).Each(func(colIndex int, cell *goquery.Selection) {
-			if colIndex >= len(timeSlots) {
+			if colIndex >= len(data.TimeSlots) {
 				return
 			}
 
@@ -249,7 +254,8 @@ func (s *service) ParseResourceAvailability(html string, resourceDate time.Time)
 			}
 
 			var availability booking.Availability
-			var locationID, resourceType, timeSlotID *string
+			var locationPtr, resourceType *string
+			var timeSlotID *int
 
 			switch classNames[0] {
 			case "grupprum-passerad":
@@ -265,9 +271,12 @@ func (s *service) ParseResourceAvailability(html string, resourceDate time.Time)
 						re := regexp.MustCompile(`boka\('(.*?)','(.*?)','(.*?)','(.*?)'\)`)
 						matches := re.FindStringSubmatch(onclick)
 						if len(matches) == 5 {
-							locationID = &matches[1]
+							locationPtr = &matches[1]
 							resourceType = &matches[2]
-							timeSlotID = &matches[3]
+
+							if timeSlotIdInt, err := strconv.Atoi(matches[3]); err == nil {
+								timeSlotID = &timeSlotIdInt
+							}
 						}
 					}
 				}
@@ -277,15 +286,17 @@ func (s *service) ParseResourceAvailability(html string, resourceDate time.Time)
 
 			slot := &booking.AvailabilitySlot{
 				Availability: availability,
-				LocationId:   locationID,
+				LocationId:   locationPtr,
 				ResourceType: resourceType,
 				TimeSlotId:   timeSlotID,
 			}
-			slots = append(slots, slot)
+
+			timeSlotId := *data.TimeSlots[colIndex].ID
+			data.Slots[locationID][timeSlotId] = slot
 		})
 	})
 
-	return slots, nil
+	return data, nil
 }
 
 func parseTimeWithDate(timeStr string, baseDate time.Time) time.Time {

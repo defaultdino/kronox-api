@@ -118,7 +118,35 @@ func (s *ResourceService) GetActiveResourceBookings(ctx context.Context, schoolU
 	return bookings, nil
 }
 
-func (s *ResourceService) GetAvailableResources(ctx context.Context, school, sessionID string, date time.Time, resourceID string) ([]*booking.AvailabilitySlot, error) {
+func (s *ResourceService) GetResourcesWithAvailability(ctx context.Context, schoolUrl, sessionID string, date time.Time) ([]*booking.Resource, error) {
+	resources, err := s.GetResources(ctx, schoolUrl, sessionID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, resource := range resources {
+		html, err := s.getAvailableResourcesHTML(ctx, schoolUrl, sessionID, date, resource.ID)
+		if err != nil {
+			log.Printf("Failed to get availability for resource %s: %v", resource.ID, err)
+			continue
+		}
+
+		availData, err := s.parserService.ParseResourceAvailability(html, date)
+		if err != nil {
+			log.Printf("Failed to parse availability for resource %s: %v", resource.ID, err)
+			continue
+		}
+
+		resource.Date = &date
+		resource.TimeSlots = availData.TimeSlots
+		resource.LocationIDs = availData.LocationIDs
+		resource.Availabilities = availData.Slots
+	}
+
+	return resources, nil
+}
+
+func (s *ResourceService) GetAvailableResources(ctx context.Context, school, sessionID string, date time.Time, resourceID string) (*parsers.ResourceAvailabilityData, error) {
 	html, err := s.getAvailableResourcesHTML(ctx, school, sessionID, date, resourceID)
 	if err != nil {
 		return nil, err
@@ -147,7 +175,7 @@ func (s *ResourceService) BookResource(ctx context.Context, schoolUrl, sessionID
 		"flik":      resourceId,
 		"id":        *req.Slot.LocationId,
 		"typ":       *req.Slot.ResourceType,
-		"intervall": *req.Slot.TimeSlotId,
+		"intervall": fmt.Sprintf("%d", *req.Slot.TimeSlotId), // Convert int to string
 		"moment":    "Booked via Tumble",
 	}
 
@@ -350,7 +378,7 @@ func (s *ResourceService) handleBookingError(content, schoolUrl string, req *boo
 	case strings.Contains(content, "max number of bookings"):
 		return fmt.Errorf("you have already created max number of bookings")
 	default:
-		return fmt.Errorf("something went wrong while booking resource. Details:\nschoolUrl: %s\ndate: %s\nresourceId: %s\nlocationId: %s\nresourceType: %s\ntimeSlotId: %s\nError: %s",
+		return fmt.Errorf("something went wrong while booking resource. Details:\nschoolUrl: %s\ndate: %s\nresourceId: %s\nlocationId: %s\nresourceType: %s\ntimeSlotId: %d\nError: %s",
 			schoolUrl,
 			req.Date.Format("02-01-06"),
 			resourceId,

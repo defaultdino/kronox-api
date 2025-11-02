@@ -12,7 +12,7 @@ type ParserService interface {
 	// Resource parsers
 	ParseResources(html string) ([]*booking.Resource, error)
 	ParsePersonalBookings(html string, resourceID string) ([]*booking.Booking, error)
-	ParseResourceAvailability(html string, resourceDate time.Time) ([]*booking.AvailabilitySlot, error) // Fixed method name
+	ParseResourceAvailability(html string, resourceDate time.Time) (*ResourceAvailabilityData, error)
 
 	// Event parsers
 	ParseUserEvents(html string) (*user.EventsResponse, error)
