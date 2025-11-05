@@ -5,6 +5,7 @@ import (
 )
 
 type Booking struct {
+	ID string `json:"id"`
 	ResourceID         string     `json:"resource_id"`
 	TimeSlot           *TimeSlot  `json:"time_slot"`
 	LocationID         string     `json:"location_id"`

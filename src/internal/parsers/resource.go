@@ -66,7 +66,7 @@ func (s *service) ParsePersonalBookings(html string, resourceID string) ([]*book
 }
 
 func parseBookingNode(s *goquery.Selection, resourceID string) (*booking.Booking, error) {
-	_, exists := s.Attr("id")
+	bookingID, exists := s.Attr("id")
 	if !exists {
 		return nil, fmt.Errorf("no booking ID found")
 	}
@@ -187,6 +187,7 @@ func parseBookingNode(s *goquery.Selection, resourceID string) (*booking.Booking
 	}
 
 	return &booking.Booking{
+		ID: strings.TrimPrefix(bookingID, "post_"),
 		ResourceID:         resourceID,
 		TimeSlot:           timeSlot,
 		LocationID:         locationID,
