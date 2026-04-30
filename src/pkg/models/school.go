@@ -58,24 +58,22 @@ func ParseSchoolID(s string) (SchoolID, error) {
 }
 
 type School struct {
-	ID            SchoolID `json:"id"`
-	Name          string   `json:"name"`
-	URLs          []string `json:"urls"`
-	LoginRequired bool     `json:"login_required"`
+	ID   SchoolID `json:"id"`
+	Name string   `json:"name"`
+	URLs []string `json:"urls"`
 }
 
-func NewSchool(id SchoolID, name string, urls []string, loginRequired bool) *School {
+func NewSchool(id SchoolID, name string, urls []string) *School {
 	return &School{
-		ID:            id,
-		Name:          name,
-		URLs:          urls,
-		LoginRequired: loginRequired,
+		ID:   id,
+		Name: name,
+		URLs: urls,
 	}
 }
 
 func (s *School) String() string {
-	return fmt.Sprintf("School{ID: %s, Name: %s, URLs: %d, LoginRequired: %t}",
-		s.ID.String(), s.Name, len(s.URLs), s.LoginRequired)
+	return fmt.Sprintf("School{ID: %s, Name: %s, URLs: %d}",
+		s.ID.String(), s.Name, len(s.URLs))
 }
 
 func (s *School) HasMultipleURLs() bool {

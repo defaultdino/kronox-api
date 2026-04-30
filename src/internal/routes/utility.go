@@ -68,23 +68,8 @@ func getAPIDocumentation() []map[string]string {
 		{"method": "GET", "path": "/routes", "description": "List all available routes"},
 		{"method": "GET", "path": "/schools", "description": "List supported schools"},
 
-		// Auth
-		{"method": "POST", "path": "/api/v1/auth/login", "description": "Login to get session ID"},
-		{"method": "GET", "path": "/api/v1/auth/validate", "description": "Validate session"},
-
 		// Schedules
-		{"method": "GET", "path": "/api/v1/schedules", "description": "Get schedule events"},
-		{"method": "GET", "path": "/api/v1/schedules/programmes", "description": "Search programmes"},
-
-		// Resources & Bookings
-		{"method": "GET", "path": "/api/v1/resources", "description": "Get all bookable resources"},
-		{"method": "GET", "path": "/api/v1/resources/{resourceId}/availability", "description": "Get resource availability"},
-		{"method": "GET", "path": "/api/v1/resources/{resourceId}/bookings", "description": "Get bookings for specific resource"},
-
-		// User Bookings
-		{"method": "GET", "path": "/api/v1/bookings", "description": "Get user's all bookings"},
-		{"method": "POST", "path": "/api/v1/bookings", "description": "Create new booking"},
-		{"method": "DELETE", "path": "/api/v1/bookings/{bookingId}", "description": "Cancel booking"},
-		{"method": "POST", "path": "/api/v1/bookings/{bookingId}/confirm", "description": "Confirm pending booking"},
+		{"method": "GET", "path": "/api/v1/schedule/events", "description": "Get schedule events"},
+		{"method": "GET", "path": "/api/v1/programme/search", "description": "Search programmes"},
 	}
 }

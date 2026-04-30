@@ -17,7 +17,7 @@ import (
 
 // @title           Kronox API
 // @version         1.0
-// @description     A RESTful Web API for managing Kronox web resources, schedules, events, and bookings
+// @description     A RESTful Web API for managing Kronox web resources and schedules
 // @termsOfService  http://swagger.io/terms/
 
 // @contact.name   API Support
@@ -29,11 +29,6 @@ import (
 
 // @host      localhost:5055
 // @BasePath  /api/v1
-
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Type "Bearer" followed by a space and session token.
 
 func main() {
 	app, err := app.NewApp()
@@ -52,44 +47,29 @@ func main() {
 
 type Services struct {
 	Parser    parsers.ParserService
-	Auth      *services.AuthService
-	Session   *services.SessionManager
 	Schedule  *services.ScheduleService
 	Programme *services.ProgrammeService
-	Resource  *services.ResourceService
-	Event     *services.EventService
 }
 
 type Handlers struct {
-	Auth      *handlers.AuthHandler
 	Schedule  *handlers.ScheduleHandler
 	Programme *handlers.ProgrammeHandler
-	Resource  *handlers.ResourceHandler
-	Event     *handlers.EventHandler
 }
 
 func initializeServices(app *app.App) *Services {
 	parserService := parsers.NewParserService()
-	sessionManager := services.NewSessionManager(app)
 
 	return &Services{
 		Parser:    parserService,
-		Session:   sessionManager,
-		Auth:      services.NewAuthService(app, parserService, sessionManager),
 		Schedule:  services.NewScheduleService(app),
 		Programme: services.NewProgrammeService(app),
-		Resource:  services.NewResourceService(app, sessionManager, parserService),
-		Event:     services.NewEventService(app, parserService, sessionManager),
 	}
 }
 
 func initializeHandlers(services *Services) *Handlers {
 	return &Handlers{
-		Auth:      handlers.NewAuthHandler(services.Auth, services.Event, services.Resource),
 		Schedule:  handlers.NewScheduleHandler(services.Schedule, services.Parser),
 		Programme: handlers.NewProgrammeHandler(services.Programme, services.Parser),
-		Resource:  handlers.NewResourceHandler(services.Resource),
-		Event:     handlers.NewEventHandler(services.Event, services.Parser),
 	}
 }
 
@@ -103,10 +83,7 @@ func setupRouter(app *app.App, handlers *Handlers) *gin.Engine {
 	routes.SetupUtilityRoutes(r)
 
 	api := r.Group("/api/v1")
-	routes.SetupAuthRoutes(api, handlers.Auth)
 	routes.SetupScheduleRoutes(api, handlers.Schedule)
-	routes.SetupResourceRoutes(api, handlers.Resource)
-	routes.SetupEventRoutes(api, handlers.Event)
 	routes.SetupProgrammeRoutes(api, handlers.Programme)
 
 	return r

@@ -30,7 +30,7 @@ func NewProgrammeHandler(programmeService *services.ProgrammeService, parserServ
 // @Param        q        query     string  true  "Search query for programmes"
 // @Param        school   query     string  true  "School that request pertains to"  example("hkr")
 // @Param        url_index query     int     true  "Index of the school URL to use"  example(0)
-// @Success      200     {object}  ProgrammesListResponse  "List of programmes matching search criteria"
+// @Success      200     {object}  ProgrammesResponse      "List of programmes matching search criteria"
 // @Failure      400     {object}  ErrorResponse           "Search query required or invalid url_index"
 // @Failure      500     {object}  ErrorResponse           "Failed to fetch or parse programmes"
 // @Router       /programmes [get]

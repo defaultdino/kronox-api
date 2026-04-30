@@ -73,3 +73,9 @@ func ExecuteWithSchoolURL(c *gin.Context, callback func(url string) error) error
 
 	return callback(schoolURL)
 }
+
+// ErrorResponse represents a generic API error
+// @Description Error response structure
+type ErrorResponse struct {
+	Error string `json:"error" example:"Invalid request"`
+}
