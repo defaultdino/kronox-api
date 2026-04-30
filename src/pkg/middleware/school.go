@@ -1,24 +1,26 @@
 package middleware
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 
-	"github.com/BurntSushi/toml"
 	"github.com/gin-gonic/gin"
 )
 
 type School struct {
-	Name   string   `toml:"name"`
-	Domain string   `toml:"domain"`
-	URLs   []string `toml:"urls"`
+	Id      string   `json:"id"`
+	Name    string   `json:"name"`
+	Domain  string   `json:"domain"`
+	URLs    []string `json:"urls"`
+	LogoUrl string   `json:"logoUrl"`
 }
 
 type Config struct {
-	Schools map[string]School `toml:"schools"`
+	Schools map[string]School `json:"schools"`
 }
 
 var (
@@ -28,7 +30,7 @@ var (
 
 func GetSchoolConfig() Config {
 	loadOnce.Do(func() {
-		if err := LoadSchoolConfig("schools.toml"); err != nil {
+		if err := LoadSchoolConfig(".well-known/schools.json"); err != nil {
 			panic(err)
 		}
 	})
@@ -41,8 +43,8 @@ func LoadSchoolConfig(configPath string) error {
 		return fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	if err := toml.Unmarshal(data, &schoolConfig); err != nil {
-		return fmt.Errorf("failed to parse TOML config: %w", err)
+	if err := json.Unmarshal(data, &schoolConfig); err != nil {
+		return fmt.Errorf("failed to parse JSON config: %w", err)
 	}
 
 	return nil

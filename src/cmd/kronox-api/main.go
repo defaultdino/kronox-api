@@ -75,6 +75,9 @@ func initializeHandlers(services *Services) *Handlers {
 
 func setupRouter(app *app.App, handlers *Handlers) *gin.Engine {
 	r := gin.New()
+
+	gin.SetMode(gin.ReleaseMode)
+
 	r.Use(gin.Recovery())
 	r.Use(middleware.InjectDependencies(app))
 
