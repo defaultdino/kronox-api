@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/defaultdino/kronox-api/internal/parsers"
+	"github.com/defaultdino/kronox-api/internal/services"
+	"github.com/defaultdino/kronox-api/pkg/middleware"
+	"github.com/defaultdino/kronox-api/pkg/models"
 	"github.com/gin-gonic/gin"
-	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
-	"github.com/tumble-for-kronox/kronox-api/internal/services"
-	"github.com/tumble-for-kronox/kronox-api/pkg/middleware"
-	"github.com/tumble-for-kronox/kronox-api/pkg/models"
 )
 
 type ScheduleHandler struct {

@@ -1,7 +1,7 @@
 package parsers
 
 import (
-	"github.com/tumble-for-kronox/kronox-api/pkg/models"
+	"github.com/defaultdino/kronox-api/pkg/models"
 )
 
 type ParserService interface {

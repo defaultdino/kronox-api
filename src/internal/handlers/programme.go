@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/defaultdino/kronox-api/internal/parsers"
+	"github.com/defaultdino/kronox-api/internal/services"
 	"github.com/gin-gonic/gin"
-	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
-	"github.com/tumble-for-kronox/kronox-api/internal/services"
 )
 
 type ProgrammeHandler struct {

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/tumble-for-kronox/kronox-api/pkg/models"
+	"github.com/defaultdino/kronox-api/pkg/models"
 )
 
 func (s *service) ParseProgrammes(html string) ([]*models.Programme, error) {

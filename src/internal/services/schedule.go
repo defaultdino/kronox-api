@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/tumble-for-kronox/kronox-api/internal/app"
+	"github.com/defaultdino/kronox-api/internal/app"
 )
 
 type ScheduleService struct {

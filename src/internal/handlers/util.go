@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/defaultdino/kronox-api/pkg/middleware"
 	"github.com/gin-gonic/gin"
-	"github.com/tumble-for-kronox/kronox-api/pkg/middleware"
 )
 
 func AttemptOverSchoolURLs[T any](c *gin.Context, callback func(ctx context.Context, url string) (T, error)) (T, error) {

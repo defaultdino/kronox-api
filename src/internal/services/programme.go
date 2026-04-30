@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/tumble-for-kronox/kronox-api/internal/app"
+	"github.com/defaultdino/kronox-api/internal/app"
 )
 
 type ProgrammeService struct {

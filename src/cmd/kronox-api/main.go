@@ -3,16 +3,16 @@ package main
 import (
 	"log"
 
+	_ "github.com/defaultdino/kronox-api/docs"
+	"github.com/defaultdino/kronox-api/internal/app"
+	"github.com/defaultdino/kronox-api/internal/handlers"
+	"github.com/defaultdino/kronox-api/internal/middleware"
+	"github.com/defaultdino/kronox-api/internal/parsers"
+	"github.com/defaultdino/kronox-api/internal/routes"
+	"github.com/defaultdino/kronox-api/internal/services"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	_ "github.com/tumble-for-kronox/kronox-api/docs"
-	"github.com/tumble-for-kronox/kronox-api/internal/app"
-	"github.com/tumble-for-kronox/kronox-api/internal/handlers"
-	"github.com/tumble-for-kronox/kronox-api/internal/middleware"
-	"github.com/tumble-for-kronox/kronox-api/internal/parsers"
-	"github.com/tumble-for-kronox/kronox-api/internal/routes"
-	"github.com/tumble-for-kronox/kronox-api/internal/services"
 )
 
 // @title           Kronox API

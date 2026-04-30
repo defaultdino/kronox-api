@@ -1,8 +1,8 @@
 package routes
 
 import (
+	"github.com/defaultdino/kronox-api/pkg/middleware"
 	"github.com/gin-gonic/gin"
-	"github.com/tumble-for-kronox/kronox-api/pkg/middleware"
 )
 
 func SetupUtilityRoutes(r *gin.Engine) {

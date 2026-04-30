@@ -1,8 +1,8 @@
 package middleware
 
 import (
+	"github.com/defaultdino/kronox-api/internal/app"
 	"github.com/gin-gonic/gin"
-	"github.com/tumble-for-kronox/kronox-api/internal/app"
 )
 
 func InjectDependencies(app *app.App) gin.HandlerFunc {

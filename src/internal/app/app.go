@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/tumble-for-kronox/kronox-api/internal/clients/kronox"
+	"github.com/defaultdino/kronox-api/internal/clients/kronox"
 )
 
 type App struct {

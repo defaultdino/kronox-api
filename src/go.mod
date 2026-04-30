@@ -1,4 +1,4 @@
-module github.com/tumble-for-kronox/kronox-api
+module github.com/defaultdino/kronox-api
 
 go 1.23.0
 
