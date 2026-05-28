@@ -1,6 +1,0 @@
-*.md
-Dockerfile
-.dockerignore
-justfile
-.air.toml
-vendor
