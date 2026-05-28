@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,31 +22,54 @@ type Config struct {
 	Schools map[string]School `json:"schools"`
 }
 
-var (
-	schoolConfig Config
-	loadOnce     sync.Once
+const (
+	EnvSchoolsJSON = "KRONOX_SCHOOLS_JSON"
+	EnvSchoolsFile = "KRONOX_SCHOOLS_FILE"
+
+	defaultSchoolsPath = ".well-known/schools.json" // assuming the user is hosting their own API serving schools (like kron-api does)
 )
 
-func GetSchoolConfig() Config {
-	loadOnce.Do(func() {
-		if err := LoadSchoolConfig(".well-known/schools.json"); err != nil {
-			panic(err)
-		}
-	})
-	return schoolConfig
+var schoolConfig Config
+
+func LoadSchools() error {
+	if raw := os.Getenv(EnvSchoolsJSON); raw != "" {
+		return loadFromJSON([]byte(raw), EnvSchoolsJSON)
+	}
+	path := os.Getenv(EnvSchoolsFile)
+	source := EnvSchoolsFile
+	if path == "" {
+		path = defaultSchoolsPath
+		source = "default path"
+	}
+	return loadFromFile(path, source)
 }
 
-func LoadSchoolConfig(configPath string) error {
-	data, err := os.ReadFile(configPath)
+func SetSchools(cfg Config) {
+	schoolConfig = cfg
+}
+
+func loadFromFile(path, source string) error {
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("failed to read config file: %w", err)
+		return fmt.Errorf("read schools config (%s=%q): %w", source, path, err)
 	}
+	return loadFromJSON(data, fmt.Sprintf("%s=%s", source, path))
+}
 
-	if err := json.Unmarshal(data, &schoolConfig); err != nil {
-		return fmt.Errorf("failed to parse JSON config: %w", err)
+func loadFromJSON(data []byte, source string) error {
+	var cfg Config
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		return fmt.Errorf("parse schools JSON from %s: %w", source, err)
 	}
-
+	if len(cfg.Schools) == 0 {
+		return fmt.Errorf("schools config from %s is empty", source)
+	}
+	schoolConfig = cfg
 	return nil
+}
+
+func GetSchoolConfig() Config {
+	return schoolConfig
 }
 
 func SchoolValidationMiddleware() gin.HandlerFunc {

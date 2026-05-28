@@ -10,6 +10,7 @@ import (
 	"github.com/defaultdino/kronox-api/internal/parsers"
 	"github.com/defaultdino/kronox-api/internal/routes"
 	"github.com/defaultdino/kronox-api/internal/services"
+	sharedmw "github.com/defaultdino/kronox-api/pkg/middleware"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -35,6 +36,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to initialize app: %v", err)
 	}
+
+	if err := sharedmw.LoadSchools(); err != nil {
+		log.Fatalf("Failed to load schools config: %v\n\n"+
+			"Set %s (inline JSON), %s (path to a JSON file), or place schools.json at %s relative to cwd.",
+			err, sharedmw.EnvSchoolsJSON, sharedmw.EnvSchoolsFile, ".well-known/schools.json")
+	}
+
 	services := initializeServices(app)
 	handlers := initializeHandlers(services)
 
