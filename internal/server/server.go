@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -86,9 +85,6 @@ func (s *Server) GetScheduleEvents(ctx context.Context, in *GetEventsInput) (*Ge
 	}
 
 	ids := strings.Split(in.ScheduleIDs, ",")
-	for i := range ids {
-		ids[i] = url.QueryEscape(ids[i])
-	}
 
 	var startDate *time.Time
 	if in.StartDate != "" {
